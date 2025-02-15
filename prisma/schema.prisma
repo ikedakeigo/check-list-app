@@ -28,7 +28,7 @@ model User {
 
   // リレーション
   checkLists     CheckLists[]
-  checkListItems CheckListItems[]
+  checkListItem CheckListItem[]
   notifications  Notification[]
 }
 
@@ -64,12 +64,12 @@ model CheckLists {
 
   // リレーション
   user          User             @relation(fields: [userId], references: [id])
-  items         CheckListItems[]
+  items         CheckListItem[]
   notifications Notification[]
 }
 
 // チェックリストアイテムテーブル（中間テーブル）
-model CheckListItems {
+model CheckListItem {
   id          Int       @id @default(autoincrement())
   checkListId Int
   categoryId  Int
@@ -100,5 +100,5 @@ model Categories {
   updatedAt    DateTime @updatedAt
 
   // リレーション
-  items CheckListItems[]
+  items CheckListItem[]
 }
