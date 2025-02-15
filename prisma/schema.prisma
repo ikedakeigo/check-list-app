@@ -20,7 +20,7 @@ enum Status {
 model User {
   id             Int      @id @default(autoincrement())
   name           String
-  supabaseUserId String
+  supabaseUserId String  @unique
   role           String
   isArchived     Boolean  @default(false)
   createdAt      DateTime @default(now())
