@@ -9,3 +9,95 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+enum Status {
+  Pending
+  Completed
+}
+
+// ユーザーテーブル
+model User {
+  id             Int      @id @default(autoincrement())
+  name           String
+  supabaseUserId String
+  role           String
+  isArchived     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // リレーション
+  checkLists     CheckLists[]
+  checkListItems CheckListItems[]
+  notifications  Notification[]
+}
+
+// 通知テーブル
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  checkListId Int? // 通知に必ずチェックリストが紐づくなら Int に変更
+  type        String
+  title       String
+  message     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  user      User        @relation(fields: [userId], references: [id])
+  checkList CheckLists? @relation(fields: [checkListId], references: [id])
+}
+
+// チェックリストテーブル
+model CheckLists {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  name        String
+  description String?
+  status      Status    @default(Pending)
+  workDate    DateTime
+  siteName    String
+  isTemplate  Boolean   @default(false)
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // リレーション
+  user          User             @relation(fields: [userId], references: [id])
+  items         CheckListItems[]
+  notifications Notification[]
+}
+
+// チェックリストアイテムテーブル（中間テーブル）
+model CheckListItems {
+  id          Int       @id @default(autoincrement())
+  checkListId Int
+  categoryId  Int
+  userId      Int
+  name        String
+  description String?
+  unit        String?
+  quantity    Int?
+  status      Status    @default(Pending)
+  completedAt DateTime?
+  memo        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // リレーション
+  user      User       @relation(fields: [userId], references: [id])
+  checkList CheckLists @relation(fields: [checkListId], references: [id])
+  category  Categories @relation(fields: [categoryId], references: [id])
+}
+
+// カテゴリーテーブル
+model Categories {
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // リレーション
+  items CheckListItems[]
+}
