@@ -81,6 +81,7 @@ export const PATCH = async (
     return NextResponse.json(checkList, { status: 200 })
 
   } catch (error) {
+    console.error('Error', error)
     return NextResponse.json(
       { error: 'Error updating checklist' },
       { status: 500 }
@@ -103,6 +104,7 @@ export const DELETE = async (
 
     return NextResponse.json(null)
   } catch (error) {
+    console.error('Error', error)
     return NextResponse.json(
       { error: 'Error deleting checklist' },
       { status: 500 }

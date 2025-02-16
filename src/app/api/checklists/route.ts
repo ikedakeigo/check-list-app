@@ -47,6 +47,7 @@ export const POST = async (req: NextRequest) => {
 
     return NextResponse.json(checkList, { status: 200 });
   } catch (error) {
+    console.error('Error', error)
     return NextResponse.json({ error: "Error creating checklist" }, { status: 500 });
   }
 };
