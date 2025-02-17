@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 // チェックリストの詳細取得
 export const GET = async (
   req: NextRequest,
-  {params}: { params: { id: string } }
+  {params}: { params: { checkListId: string } }
 ) => {
   try {
     /**
@@ -15,7 +15,7 @@ export const GET = async (
      * parseInt()でstring型をnumber型に変換している
     */
    // parseInt()で変換できなかった原因は、ディレクトリー名が[:id]になっていたため
-   const id = parseInt(params.id)
+   const id = parseInt(params.checkListId)
 
    if (isNaN(id)) {
     return NextResponse.json(
@@ -29,9 +29,9 @@ export const GET = async (
         id
       },
       include: {
-        items: {
+        items: { // チェックリストに紐づくアイテムを取得
           include: {
-            category: true,
+            category: true, // アイテムに紐づくカテゴリーを取得
           }
         }
       }
@@ -59,7 +59,7 @@ export const GET = async (
 // チェックリストの更新
 export const PATCH = async (
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { checkListId: string } }
 ) => {
   try {
     const body = await req.json()
@@ -67,7 +67,7 @@ export const PATCH = async (
 
     const checkList = await prisma.checkLists.update({
       where: {
-        id: parseInt(params.id)
+        id: parseInt(params.checkListId)
       },
       data: {
         name,
@@ -93,12 +93,12 @@ export const PATCH = async (
 // チェックリストの削除
 export const DELETE = async (
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { checkListId: string } }
 ) => {
   try {
     await prisma.checkLists.delete({
       where: {
-        id: parseInt(params.id)
+        id: parseInt(params.checkListId)
       }
     })
 
