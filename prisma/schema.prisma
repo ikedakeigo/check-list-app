@@ -93,7 +93,7 @@ model CheckListItem {
 // カテゴリーテーブル
 model Categories {
   id           Int      @id @default(autoincrement())
-  name         String
+  name         String  @unique  // ユニーク制約を追加
   description  String?
   displayOrder Int      @default(0)
   createdAt    DateTime @default(now())
