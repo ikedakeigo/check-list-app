@@ -5,13 +5,13 @@ const prisma = new PrismaClient();
 // チェックリストの複製（テンプレート作成）
 export const POST = async (
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { checkListId: string } }
 ) => {
   try {
     // 元のチェックリストを取得
     const originalChecklist = await prisma.checkLists.findUnique({
       where: {
-        id: parseInt(params.id),
+        id: parseInt(params.checkListId),
       },
       include: {
         items: true,
