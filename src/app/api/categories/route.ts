@@ -1,3 +1,4 @@
+import { CategoryRequestBody } from "@/app/_types/category";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -29,7 +30,7 @@ export const POST = async (
   req: NextRequest
 ) => {
   try {
-    const body = await req.json()
+    const body: CategoryRequestBody = await req.json()
     const { name, description, displayOrder } = body
 
     const existingCategory = await prisma.categories.findUnique({
@@ -60,5 +61,3 @@ export const POST = async (
     )
   }
 }
-
-

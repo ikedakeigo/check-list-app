@@ -1,3 +1,4 @@
+import { CategoryRequestBody } from "@/app/_types/category";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -9,7 +10,7 @@ export const PATCH = async (
   { params }: { params: { id: string } }
 ) => {
   try {
-    const body = await req.json()
+    const body: CategoryRequestBody = await req.json()
     const { name, description, displayOrder } = body
 
     // カテゴリー名が重複していないかチェック
