@@ -1,3 +1,4 @@
+import { CheckListItemsRequestBody } from "@/app/_types/checkListItems";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -35,7 +36,7 @@ export const POST = async (
   { params }: { params: { checkListId: string } }
 ) => {
   try {
-    const body = await req.json()
+    const body: CheckListItemsRequestBody = await req.json()
     const { name, description, categoryId, quantity, unit, memo } = body
 
     const item = await prisma.checkListItem.create({
