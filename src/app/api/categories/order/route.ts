@@ -1,3 +1,4 @@
+import { UpdateCategoryOrderRequest } from "@/app/_types/category";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -6,8 +7,8 @@ const prisma = new PrismaClient();
 // カテゴリの順番を更新
 export const PATCH = async (req: NextRequest) => {
   try {
-    const body = await req.json();
-    const { orders  }: { orders: {id: number; displayOrder: number}[] } = body;
+    const body: UpdateCategoryOrderRequest = await req.json();
+    const { orders } = body;
 
     // prisma.$transactionは全てのupdateが成功したらデータベースにコミットする
     await prisma.$transaction(
