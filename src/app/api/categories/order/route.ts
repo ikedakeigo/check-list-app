@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export const PATCH = async (req: NextRequest) => {
   try {
     const body = await req.json();
-    const { orders  } = body;
+    const { orders  }: { orders: {id: number; displayOrder: number}[] } = body;
 
     // prisma.$transactionは全てのupdateが成功したらデータベースにコミットする
     await prisma.$transaction(
