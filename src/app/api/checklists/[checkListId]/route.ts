@@ -1,3 +1,4 @@
+import { CheckListRequestBody } from "@/app/_types/checklists";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -62,7 +63,7 @@ export const PATCH = async (
   { params }: { params: { checkListId: string } }
 ) => {
   try {
-    const body = await req.json()
+    const body: CheckListRequestBody = await req.json()
     const { name, description, workDate, siteName, isTemplate } = body
 
     const checkList = await prisma.checkLists.update({
