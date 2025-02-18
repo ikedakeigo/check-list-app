@@ -1,3 +1,4 @@
+import { CheckListRequestBody } from "@/app/_types/checklists";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -30,7 +31,7 @@ export const GET = async (req: NextRequest) => {
 // チェックリストの作成
 export const POST = async (req: NextRequest) => {
   try {
-    const body = await req.json();
+    const body: CheckListRequestBody = await req.json();
     const { name, description, workDate, siteName, isTemplate } = body;
 
     const checkList = await prisma.checkLists.create({
