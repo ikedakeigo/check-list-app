@@ -1,3 +1,4 @@
+import { supabase } from "@/lib/supabase";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,6 +9,18 @@ export const POST = async (
   req: NextRequest,
   { params }: { params: { checkListId: string } }
 ) => {
+
+  const token = req.headers.get('Authorization') ?? ''
+  const { error } = await supabase.auth.getUser(token)
+
+  if(error) {
+    return NextResponse.json(
+      { status: error.message},
+      { status: 400 }
+    )
+  }
+
+
   try {
     const checkList = await prisma.checkLists.update({
       where: {

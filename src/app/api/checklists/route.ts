@@ -1,4 +1,5 @@
 import { CheckListRequestBody } from "@/app/_types/checklists";
+import { supabase } from "@/lib/supabase";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -6,6 +7,17 @@ const prisma = new PrismaClient();
 
 // チェックリスト一覧の取得
 export const GET = async (req: NextRequest) => {
+
+  const token = req.headers.get('Authorization') ?? ''
+  const { error } = await supabase.auth.getUser(token)
+
+  if(error) {
+    return NextResponse.json(
+      { status: error.message},
+      { status: 400 }
+    )
+  }
+
   try {
     const searchParams = req.nextUrl.searchParams;
     const isArchived = searchParams.get("isArchived") === "true";
@@ -30,6 +42,17 @@ export const GET = async (req: NextRequest) => {
 
 // チェックリストの作成
 export const POST = async (req: NextRequest) => {
+
+  const token = req.headers.get('Authorization') ?? ''
+  const { error } = await supabase.auth.getUser(token)
+
+  if(error) {
+    return NextResponse.json(
+      { status: error.message},
+      { status: 400 }
+    )
+  }
+
   try {
     const body: CheckListRequestBody = await req.json();
     const { name, description, workDate, siteName, isTemplate } = body;

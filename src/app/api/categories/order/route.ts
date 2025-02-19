@@ -1,4 +1,5 @@
 import { UpdateCategoryOrderRequest } from "@/app/_types/category";
+import { supabase } from "@/lib/supabase";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -6,6 +7,19 @@ const prisma = new PrismaClient();
 
 // カテゴリの順番を更新
 export const PATCH = async (req: NextRequest) => {
+
+  // supabaseログイン認可
+  const token = req.headers.get('Authorization') ?? ''
+
+  const { error } = await supabase.auth.getUser(token)
+
+  if(error) {
+    return NextResponse.json(
+      { status: error.message},
+      { status: 400 }
+    )
+  }
+
   try {
     const body: UpdateCategoryOrderRequest = await req.json();
     const { orders } = body;

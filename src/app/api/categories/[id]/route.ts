@@ -1,4 +1,5 @@
 import { CategoryRequestBody } from "@/app/_types/category";
+import { supabase } from "@/lib/supabase";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -9,6 +10,18 @@ export const PATCH = async (
   req: NextRequest,
   { params }: { params: { id: string } }
 ) => {
+
+  const token = req.headers.get('Authorization') ?? ''
+
+  const { error } = await supabase.auth.getUser(token)
+
+  if(error) {
+    return NextResponse.json(
+      { status: error.message},
+      { status: 400 }
+    )
+  }
+
   try {
     const body: CategoryRequestBody = await req.json()
     const { name, description, displayOrder } = body
@@ -56,6 +69,22 @@ export const DELETE = async (
   req: NextRequest,
   { params }: { params: { id: string } }
 ) => {
+
+  // フロントエンドから送られてきたtokenより
+  // ログインされたユーザーか判断する
+  const token = req.headers.get('Authorization') ?? ''
+
+  // supabaseに対してtokenを送る
+  const { error } = await supabase.auth.getUser(token)
+
+  // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
+  if( error ) {
+    return NextResponse.json(
+      { status: error.message},
+      { status: 400 }
+    )
+  }
+
   try {
     await prisma.categories.delete({
       where: {
