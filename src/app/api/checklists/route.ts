@@ -57,6 +57,28 @@ export const POST = async (req: NextRequest) => {
     const body: CheckListRequestBody = await req.json();
     const { name, description, workDate, siteName, isTemplate } = body;
 
+    const { data, error }  = await supabase.auth.getUser(token)
+
+    if( error || !data.user) {
+      throw new Error('ユーザーは登録されていません。')
+    }
+
+    const supabaseUserId = data.user.id
+
+    // let user = await prisma.user.findUnique({
+    //   where: {supabaseUserId }
+    // })
+
+    // if (!user) {
+    //   user = await prisma.user.create({
+    //     data: {
+    //       supabaseUserId,
+    //       role: "user",
+    //       name: "aaaaaaaaaaa"
+    //     }
+    //   })
+    // }
+
     const checkList = await prisma.checkLists.create({
       data: {
         name,
@@ -64,7 +86,7 @@ export const POST = async (req: NextRequest) => {
         workDate: new Date(workDate),
         siteName,
         isTemplate: isTemplate || false,
-        userId: 1, // 仮のユーザーID（後で認証実装時に修正）
+        supabaseUserId, // 仮のユーザーID（後で認証実装時に修正）
         status: "Pending", // デフォルト値だが明示的に指定
       },
     });

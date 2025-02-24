@@ -70,6 +70,14 @@ export const POST = async (
     const body: CheckListItemsRequestBody = await req.json()
     const { name, description, categoryId, quantity, unit, memo } = body
 
+    const { data, error } = await supabase.auth.getUser(token)
+
+    if ( error || !data.user) {
+      throw new Error('ユーザーは登録されていません。')
+    }
+
+    const supabaseUserId = data.user.id
+
     const item = await prisma.checkListItem.create({
       data: {
         name,
@@ -79,7 +87,7 @@ export const POST = async (
         unit,
         memo,
         checkListId: parseInt(params.checkListId),
-        userId: 1 // TODO: 認証実装後に実際のユーザーIDを使用
+        supabaseUserId
       },
       include: {
         category: true
