@@ -18,7 +18,7 @@ enum Status {
 
 // ユーザーテーブル
 model User {
-  id             Int      @id @default(autoincrement())
+  id            String   @id @default(uuid())
   name           String
   supabaseUserId String  @unique
   role           String
@@ -35,7 +35,7 @@ model User {
 // 通知テーブル
 model Notification {
   id          Int      @id @default(autoincrement())
-  userId      Int
+  userId      String
   checkListId Int? // 通知に必ずチェックリストが紐づくなら Int に変更
   type        String
   title       String
@@ -51,7 +51,7 @@ model Notification {
 // チェックリストテーブル
 model CheckLists {
   id          Int       @id @default(autoincrement())
-  userId      Int
+  userId      String
   name        String
   description String?
   status      Status    @default(Pending)
@@ -73,7 +73,7 @@ model CheckListItem {
   id          Int       @id @default(autoincrement())
   checkListId Int
   categoryId  Int
-  userId      Int
+  userId      String
   name        String
   description String?
   unit        String?
