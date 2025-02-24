@@ -40,6 +40,29 @@ export const POST = async (
       )
     }
 
+    const { data, error } = await supabase.auth.getUser(token)
+
+    if (error || !data.user){
+      throw new Error('ユーザーは登録されていません。')
+    }
+
+    const supabaseUserId = data.user.id
+
+
+    // let user = await prisma.user.findUnique({
+    //   where: {supabaseUserId }
+    // })
+
+    // if (!user) {
+    //   user = await prisma.user.create({
+    //     data: {
+    //       supabaseUserId,
+    //       role: "user",
+    //       name: "aaaaaaaaaaa"
+    //     }
+    //   })
+    // }
+
     // 新しいチェックリストを作成
     const newChecklist = await prisma.checkLists.create({
       data: {
@@ -48,7 +71,7 @@ export const POST = async (
         siteName: originalChecklist.siteName,
         workDate: originalChecklist.workDate, // 作業日はそのままコピー
         isTemplate: true, // テンプレートとして作成
-        userId: 1, // 仮のユーザーID（後で認証実装時に修正）
+        supabaseUserId, // 仮のユーザーID（後で認証実装時に修正）
         // アイテムもコピー
         items: {
           create: originalChecklist.items.map(item => ({
@@ -58,7 +81,7 @@ export const POST = async (
             quantity: item.quantity,
             unit: item.unit,
             memo: item.memo,
-            userId: 1 // TODO: 認証実装後に実際のユーザーIDを使用
+            supabaseUserId // TODO: 認証実装後に実際のユーザーIDを使用
           }))
         },
       },

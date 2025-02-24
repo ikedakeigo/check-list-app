@@ -6,12 +6,13 @@ const prisma = new PrismaClient();
 
 // 通知一覧の取得
 export const GET = async (req: NextRequest) => {
+
   // フロントエンドから送られてきたtokenより
   // ログインされたユーザーか判断する
   const token = req.headers.get('Authorization') ?? ''
+
   // supabaseに対してtokenを送る
   const { error } = await supabase.auth.getUser(token)
-
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
   if( error ) {
     return NextResponse.json(
@@ -19,13 +20,20 @@ export const GET = async (req: NextRequest) => {
       { status: 400 }
     )
   }
-  
+
   try {
-    const userId = 1 // todo 認証実装後に実装のIDを入れる
+
+    const { data, error } = await supabase.auth.getUser(token)
+
+    if(error || !data.user) {
+      throw new Error('ユーザーは登録されていません。')
+    }
+
+    const supabaseUserId = data.user.id
 
     const notifications = await prisma.notification.findMany({
       where: {
-        userId
+        supabaseUserId
       },
       include: {
         checkList: {
