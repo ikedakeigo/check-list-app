@@ -9,7 +9,6 @@ export const DELETE = async(
   req: NextRequest,
   { params }: { params: { id: string }}
 ) => {
-  
   // フロントエンドから送られてきたtokenより
   // ログインされたユーザーか判断する
   const token = req.headers.get('Authorization') ?? ''
@@ -24,9 +23,19 @@ export const DELETE = async(
     )
   }
   try {
+
+    const { data, error } = await supabase.auth.getUser(token)
+
+    if( error || !data.user) {
+      throw new Error('ユーザーは登録されていません。')
+    }
+
+    const supabaseUserId = data.user.id
+
     await prisma.notification.delete({
       where: {
-        id: parseInt(params.id)
+        id: parseInt(params.id),
+        supabaseUserId
       }
     })
 
