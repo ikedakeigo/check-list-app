@@ -15,7 +15,7 @@ export const PATCH = async (
   // ログインされたユーザーか判断する
   const token = req.headers.get('Authorization') ?? ''
   // supabaseに対してtokenを送る
-  const { error } = await supabase.auth.getUser(token)
+  const { error, data } = await supabase.auth.getUser(token)
 
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
   if( error ) {
@@ -25,13 +25,20 @@ export const PATCH = async (
     )
   }
 
+  if (error || !data.user ) {
+    throw new Error('ユーザーは登録されていません。')
+  }
+
+  const supabaseUserId = data.user.id
+
   try {
     const body: UpdateCheckListItemStatus = await req.json();
     const { status } = body;
     const item = await prisma.checkListItem.update({
       where: {
         id: parseInt(params.id),
-        checkListId: parseInt(params.checkListId)
+        checkListId: parseInt(params.checkListId),
+        supabaseUserId
       },
       data: {
         status,

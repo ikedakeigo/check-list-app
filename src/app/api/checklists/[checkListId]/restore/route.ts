@@ -13,7 +13,7 @@ export const POST = async (
   // ログインされたユーザーか判断する
   const token = req.headers.get('Authorization') ?? ''
   // supabaseに対してtokenを送る
-  const { error } = await supabase.auth.getUser(token)
+  const { error,data } = await supabase.auth.getUser(token)
 
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
   if( error ) {
@@ -31,10 +31,18 @@ export const POST = async (
    *
    * 復元する時は、archivedAtをnullに設定する
    */
+
+  if (error || !data.user ) {
+    throw new Error('ユーザーは登録されていません。')
+  }
+
+  const supabaseUserId = data.user.id
+
   try {
     const checkList = await prisma.checkLists.update({
       where: {
         id: parseInt(params.checkListId),
+        supabaseUserId
       },
       data: {
         archivedAt: null,
