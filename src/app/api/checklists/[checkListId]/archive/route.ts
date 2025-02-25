@@ -11,7 +11,7 @@ export const POST = async (
 ) => {
 
   const token = req.headers.get('Authorization') ?? ''
-  const { error } = await supabase.auth.getUser(token)
+  const { error, data } = await supabase.auth.getUser(token)
 
   if(error) {
     return NextResponse.json(
@@ -20,11 +20,17 @@ export const POST = async (
     )
   }
 
+  if ( error || !data.user ) {
+    throw new Error('ユーザーは登録されていません。')
+  }
+
+  const supabaseUserId = data.user.id
 
   try {
     const checkList = await prisma.checkLists.update({
       where: {
         id: parseInt(params.checkListId),
+        supabaseUserId
       },
       data: {
         archivedAt: new Date(),

@@ -83,7 +83,7 @@ export const PATCH = async (
   // ログインされたユーザーか判断する
   const token = req.headers.get('Authorization') ?? ''
   // supabaseに対してtokenを送る
-  const { error } = await supabase.auth.getUser(token)
+  const { error, data } = await supabase.auth.getUser(token)
 
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
   if( error ) {
@@ -93,13 +93,20 @@ export const PATCH = async (
     )
   }
 
+  if( error || !data.user) {
+    throw new Error('ユーザーは登録されていません。')
+  }
+
+  const supabaseUserId = data.user.id
+
   try {
     const body: CheckListRequestBody = await req.json()
     const { name, description, workDate, siteName, isTemplate } = body
 
     const checkList = await prisma.checkLists.update({
       where: {
-        id: parseInt(params.checkListId)
+        id: parseInt(params.checkListId),
+        supabaseUserId
       },
       data: {
         name,
@@ -132,7 +139,7 @@ export const DELETE = async (
   // ログインされたユーザーか判断する
   const token = req.headers.get('Authorization') ?? ''
   // supabaseに対してtokenを送る
-  const { error } = await supabase.auth.getUser(token)
+  const { error, data } = await supabase.auth.getUser(token)
 
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
   if( error ) {
@@ -142,10 +149,17 @@ export const DELETE = async (
     )
   }
 
+  if( error || !data.user) {
+    throw new Error('ユーザーは登録されていません。')
+  }
+
+  const supabaseUserId = data.user.id
+
   try {
     await prisma.checkLists.delete({
       where: {
-        id: parseInt(params.checkListId)
+        id: parseInt(params.checkListId),
+        supabaseUserId
       }
     })
 

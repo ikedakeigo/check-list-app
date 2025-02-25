@@ -13,7 +13,7 @@ export const DELETE = async(
   // ログインされたユーザーか判断する
   const token = req.headers.get('Authorization') ?? ''
   // supabaseに対してtokenを送る
-  const { error } = await supabase.auth.getUser(token)
+  const { error, data } = await supabase.auth.getUser(token)
 
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
   if( error ) {
@@ -22,16 +22,14 @@ export const DELETE = async(
       { status: 400 }
     )
   }
+
+  if( error || !data.user) {
+    throw new Error('ユーザーは登録されていません。')
+  }
+
+  const supabaseUserId = data.user.id
+
   try {
-
-    const { data, error } = await supabase.auth.getUser(token)
-
-    if( error || !data.user) {
-      throw new Error('ユーザーは登録されていません。')
-    }
-
-    const supabaseUserId = data.user.id
-
     await prisma.notification.delete({
       where: {
         id: parseInt(params.id),
