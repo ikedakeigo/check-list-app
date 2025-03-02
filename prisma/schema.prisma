@@ -36,7 +36,7 @@ model User {
 model Notification {
   id          Int      @id @default(autoincrement())
   userId      String
-  checkListId Int? // 通知に必ずチェックリストが紐づくなら Int に変更
+  checkListId Int
   type        String
   title       String
   message     String
@@ -45,7 +45,7 @@ model Notification {
 
   // リレーション
   user      User        @relation(fields: [userId], references: [id])
-  checkList CheckLists? @relation(fields: [checkListId], references: [id])
+  checkList CheckLists @relation(fields: [checkListId], references: [id])
 }
 
 // チェックリストテーブル
