@@ -18,7 +18,7 @@ enum Status {
 
 // ユーザーテーブル
 model User {
-  id            String   @id @default(uuid())
+  id             String   @id @default(uuid())
   name           String
   supabaseUserId String  @unique
   role           String
@@ -35,7 +35,7 @@ model User {
 // 通知テーブル
 model Notification {
   id          Int      @id @default(autoincrement())
-  supabaseUserId      String
+  userId      String
   checkListId Int? // 通知に必ずチェックリストが紐づくなら Int に変更
   type        String
   title       String
@@ -44,14 +44,14 @@ model Notification {
   updatedAt   DateTime @updatedAt
 
   // リレーション
-  user      User        @relation(fields: [supabaseUserId], references: [supabaseUserId])
+  user      User        @relation(fields: [userId], references: [id])
   checkList CheckLists? @relation(fields: [checkListId], references: [id])
 }
 
 // チェックリストテーブル
 model CheckLists {
   id          Int       @id @default(autoincrement())
-  supabaseUserId      String
+  userId      String
   name        String
   description String?
   status      Status    @default(Pending)
@@ -63,7 +63,7 @@ model CheckLists {
   updatedAt   DateTime  @updatedAt
 
   // リレーション
-  user          User             @relation(fields: [supabaseUserId], references: [supabaseUserId])
+  user      User       @relation(fields: [userId], references: [id])
   items         CheckListItem[]
   notifications Notification[]
 }
@@ -73,7 +73,7 @@ model CheckListItem {
   id          Int       @id @default(autoincrement())
   checkListId Int
   categoryId  Int
-  supabaseUserId      String
+  userId      String
   name        String
   description String?
   unit        String?
@@ -85,7 +85,7 @@ model CheckListItem {
   updatedAt   DateTime  @updatedAt
 
   // リレーション
-  user      User       @relation(fields: [supabaseUserId], references: [supabaseUserId])
+  user      User       @relation(fields: [userId], references: [id])
   checkList CheckLists @relation(fields: [checkListId], references: [id])
   category  Categories @relation(fields: [categoryId], references: [id])
 }
