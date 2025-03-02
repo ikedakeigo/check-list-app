@@ -34,11 +34,17 @@ export const PATCH = async (
   try {
     const body: UpdateCheckListItemStatus = await req.json();
     const { status } = body;
-    const item = await prisma.checkListItem.update({
+
+    /**
+     * prismaではネストされたオブジェクトを直接指定することができない
+     * updateの代わりにupdateManyを採用
+     * userオブジェクトのsupabaseUserIdを参照することができる
+     */
+    const item = await prisma.checkListItem.updateMany({
       where: {
         id: parseInt(params.id),
         checkListId: parseInt(params.checkListId),
-        supabaseUserId
+        user: { supabaseUserId }
       },
       data: {
         status,
