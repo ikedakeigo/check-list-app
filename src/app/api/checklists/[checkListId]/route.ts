@@ -50,7 +50,8 @@ export const GET = async (
           include: {
             category: true, // アイテムに紐づくカテゴリーを取得
           }
-        }
+        },
+        user: true
       }
     })
 
@@ -106,7 +107,7 @@ export const PATCH = async (
     const checkList = await prisma.checkLists.update({
       where: {
         id: parseInt(params.checkListId),
-        supabaseUserId
+        user: { supabaseUserId }
       },
       data: {
         name,
@@ -159,7 +160,7 @@ export const DELETE = async (
     await prisma.checkLists.delete({
       where: {
         id: parseInt(params.checkListId),
-        supabaseUserId
+        user: { supabaseUserId }
       }
     })
 

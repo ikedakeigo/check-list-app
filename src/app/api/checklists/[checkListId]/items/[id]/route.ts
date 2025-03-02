@@ -39,7 +39,7 @@ export const PATCH = async (
       where: {
         id: parseInt(params.id),
         checkListId: parseInt(params.checkListId),
-        supabaseUserId
+        user: { supabaseUserId }
       },
       data: {
         name,
@@ -97,7 +97,7 @@ export const DELETE = async (
       where: {
         id: parseInt(params.id),
         checkListId: parseInt(params.checkListId),
-        supabaseUserId
+        user: { supabaseUserId }
       }
     })
 

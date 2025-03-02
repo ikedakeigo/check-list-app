@@ -86,7 +86,9 @@ export const POST = async (req: NextRequest) => {
         workDate: new Date(workDate),
         siteName,
         isTemplate: isTemplate || false,
-        supabaseUserId, // 仮のユーザーID（後で認証実装時に修正）
+        user: {
+          connect: { supabaseUserId }
+        }, //supabaseUserId を持つUserを参照してuserIdを設定,
         status: "Pending", // デフォルト値だが明示的に指定
       },
     });

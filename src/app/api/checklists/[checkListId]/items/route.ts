@@ -75,8 +75,18 @@ export const POST = async (
     if ( error || !data.user) {
       throw new Error('ユーザーは登録されていません。')
     }
-
     const supabaseUserId = data.user.id
+
+    const user = await prisma.user.findUnique({
+      where: { supabaseUserId }
+    })
+
+    if(!user) {
+      return NextResponse.json(
+        {error: "User not found"},
+        {status: 404}
+      )
+    }
 
     const item = await prisma.checkListItem.create({
       data: {
@@ -87,7 +97,7 @@ export const POST = async (
         unit,
         memo,
         checkListId: parseInt(params.checkListId),
-        supabaseUserId
+        userId: user.id
       },
       include: {
         category: true

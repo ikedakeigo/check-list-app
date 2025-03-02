@@ -42,7 +42,7 @@ export const POST = async (
     const checkList = await prisma.checkLists.update({
       where: {
         id: parseInt(params.checkListId),
-        supabaseUserId
+        user: { supabaseUserId }
       },
       data: {
         archivedAt: null,
