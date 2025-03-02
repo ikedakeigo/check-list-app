@@ -33,7 +33,7 @@ export const GET = async (req: NextRequest) => {
 
     const notifications = await prisma.notification.findMany({
       where: {
-        supabaseUserId
+        user: { supabaseUserId }
       },
       include: {
         checkList: {
@@ -110,6 +110,7 @@ export const POST = async(req: NextRequest) => {
     // チェックリストごとに通知を作成
     const notifications = await Promise.all(
       todaysCheckLists.map(async (checklist) => {
+
         // アイテムの必要な情報のみ
         const requiredItems = checklist.items.map(item => ({
           name: item.name,
@@ -121,8 +122,12 @@ export const POST = async(req: NextRequest) => {
         // チェックリストごとに通知を作成
         return await prisma.notification.create({
           data: {
-            supabaseUserId,
-            checkListId: checklist.id,
+            user: {
+              connect: { supabaseUserId }
+            },
+            checkList: {
+              connect: { id: checklist.id }
+            },
             type: 'DAILY_REMINDER',
             title: `本日の作業: ${checklist.siteName}`,
             message: JSON.stringify({

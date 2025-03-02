@@ -33,7 +33,7 @@ export const DELETE = async(
     await prisma.notification.delete({
       where: {
         id: parseInt(params.id),
-        supabaseUserId
+        user: { supabaseUserId }
       }
     })
 
