@@ -13,18 +13,7 @@ import React, { useEffect, useState } from "react";
 import { CheckListItemsRequestBody } from "./_types/checkListItems";
 import { NotificationRequestBody } from "./_types/notification";
 
-// アイコンコンポーネント
-<BellIcon />;
 
-<PlusIcon />;
-
-<HomeIcon />;
-
-<ChecklistIcon />;
-
-<ArchiveIcon />;
-
-<SettingsIcon />;
 
 const HonePage = () => {
   const router = useRouter();
