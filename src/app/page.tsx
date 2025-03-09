@@ -1,17 +1,14 @@
 "use client";
 
-import ArchiveIcon from "@/components/icons/ArchiveIcon";
-import BellIcon from "@/components/icons/BellIcon";
-import ChecklistIcon from "@/components/icons/ChecklistIcon";
-import HomeIcon from "@/components/icons/HomeIcon";
-import PlusIcon from "@/components/icons/PlusIcon";
-import SettingsIcon from "@/components/icons/SettingsIcon";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { CheckListItemsRequestBody } from "./_types/checkListItems";
 import { NotificationRequestBody } from "./_types/notification";
+import Header from "@/components/header/page";
+import ArchiveIcon from "@/components/icons/ArchiveIcon";
+import PlusIcon from "@/components/icons/PlusIcon";
 
 
 
@@ -127,26 +124,12 @@ const HonePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
-      <header className="bg-blue-600 text-white p-4 flex justify-between items-center">
-        <div className="flex items-center">
-          <h1 className="text-xl font-bold">現場マネジ</h1>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <BellIcon />
-            {notifications.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 text-xs flex items-center justify-center">
-                {notifications.length}
-              </span>
-            )}
-          </div>
-          {user && (
-            <div className="text-sm">
-              {user.user_metadata?.name || user.email}
-            </div>
-          )}
-        </div>
-      </header>
+     <Header
+      title="現場マネジ"
+      showNotification
+      notificationCount={notifications.length}
+      userName={user?.user_metadata?.name || user?.email}
+     />
 
       {/* メインコンテンツ */}
       <main className="p-4 pb-24">
@@ -248,27 +231,6 @@ const HonePage = () => {
         )}
       </main>
 
-      {/* フッターナビゲーション */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <div className="flex justify-around">
-          <button className="flex flex-col items-center py-2 px-4 text-blue-600">
-            <HomeIcon />
-            <span className="text-xs mt-1">ホーム</span>
-          </button>
-          <button className="flex flex-col items-center py-2 px-4 text-gray-600">
-            <ChecklistIcon />
-            <span className="text-xs mt-1">チェック</span>
-          </button>
-          <button className="flex flex-col items-center py-2 px-4 text-gray-600">
-            <ArchiveIcon />
-            <span className="text-xs mt-1">アーカイブ</span>
-          </button>
-          <button className="flex flex-col items-center py-2 px-4 text-gray-600">
-            <SettingsIcon />
-            <span className="text-xs mt-1">設定</span>
-          </button>
-        </div>
-      </nav>
     </div>
   );
 };
