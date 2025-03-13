@@ -14,7 +14,7 @@ const ChecklistsPage = () => {
   const [loading, setLoading] = useState<boolean>(true)
   const [checklists, setChecklists] = useState<CheckLists[]>([])
   const [selectedFilter, setSelectedFilter] = useState('')
-  const [searchQuery, setSearchQuery] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState<string | undefined>("")
   const [error, setError] = useState<string | null>(null)
 
   // ログインユーザー情報
@@ -35,11 +35,13 @@ const ChecklistsPage = () => {
 
   // チェックリスト取得
   const fetchChecklists = async (userId: string, filter: string) => {
+    console.log('fetchChecklists', userId, filter)
     setLoading(true)
     setError(null)
 
     try {
-      let query = supabase.from('checklist').select('*, checkListItems(count)').eq('userId', userId)
+      let query = supabase.from('CheckLists').select('*, items(count)').eq('userId', userId)
+      // let query = supabase.from('Checklists').select('*').eq('userId', userId)
 
       // フィルター適用
       if(filter === 'active') {
