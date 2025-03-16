@@ -48,11 +48,11 @@ const HonePage = () => {
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       const { data: todayData, error: todayError } = await supabase
-      .from("checklist")
+      .from("CheckLists")
       .select("*")
-      .eq("user_id", userId)
-      .gte("created_at", tody.toISOString())
-      .lt("created_at", tomorrow.toISOString())
+      .eq("userId", userId)
+      .gte("createdAt", tody.toISOString())
+      .lt("createdAt", tomorrow.toISOString())
       .is("archivedAt", null).limit(5);
 
       // エラーがあればコンソールに出力
@@ -65,11 +65,11 @@ const HonePage = () => {
 
       // 最近のチェックリストを取得
       const { data: recentData, error: recentError } = await supabase
-      .from("checklist")
+      .from("CheckLists")
       .select("*")
-      .eq("user_id", userId)
+      .eq("userId", userId)
       .is("archivedAt", null)
-      .order("created_at", { ascending: false })
+      .order("createdAt", { ascending: false })
       .limit(5);
 
       if (recentError) {
@@ -81,10 +81,10 @@ const HonePage = () => {
 
       // 通知を取得
       const { data: notifData, error: notificationError } = await supabase
-      .from("notifications")
+      .from("Notification")
       .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
+      .eq("userId", userId)
+      .order("createdAt", { ascending: false })
       .limit(3);
 
       if (notificationError) {

@@ -1,104 +1,86 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  name           String
+  supabaseUserId String          @unique
+  role           String
+  isArchived     Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  checkListItem  CheckListItem[]
+  checkLists     CheckLists[]
+  notifications  Notification[]
+}
+
+model Notification {
+  id          Int        @id @default(autoincrement())
+  checkListId Int
+  type        String
+  title       String
+  message     String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userId      String
+  checkList   CheckLists @relation(fields: [checkListId], references: [id])
+  user        User       @relation(fields: [userId], references: [id])
+}
+
+model CheckLists {
+  id            Int             @id @default(autoincrement())
+  name          String
+  description   String?
+  status        Status          @default(Pending)
+  workDate      DateTime
+  siteName      String
+  isTemplate    Boolean         @default(false)
+  archivedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  userId        String
+  items         CheckListItem[] // CheckListItemとのリレーション
+  user          User            @relation(fields: [userId], references: [id])
+  notifications Notification[]
+}
+
+model CheckListItem {
+  id          Int        @id @default(autoincrement())
+  checkListId Int
+  categoryId  Int
+  name        String
+  description String?
+  unit        String?
+  quantity    Int?
+  status      Status     @default(Pending)
+  completedAt DateTime?
+  memo        String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userId      String
+  category    Categories @relation(fields: [categoryId], references: [id])
+  checkList   CheckLists @relation(fields: [checkListId], references: [id]) // CheckLists に紐づく
+  user        User       @relation(fields: [userId], references: [id])
+}
+
+model Categories {
+  id           Int             @id @default(autoincrement())
+  name         String          @unique
+  description  String?
+  displayOrder Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  items        CheckListItem[]
 }
 
 enum Status {
   Pending
   Completed
-}
-
-// ユーザーテーブル
-model User {
-  id             String   @id @default(uuid())
-  name           String
-  supabaseUserId String  @unique
-  role           String
-  isArchived     Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // リレーション
-  checkLists     CheckLists[]
-  checkListItem CheckListItem[]
-  notifications  Notification[]
-}
-
-// 通知テーブル
-model Notification {
-  id          Int      @id @default(autoincrement())
-  userId      String
-  checkListId Int
-  type        String
-  title       String
-  message     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // リレーション
-  user      User        @relation(fields: [userId], references: [id])
-  checkList CheckLists @relation(fields: [checkListId], references: [id])
-}
-
-// チェックリストテーブル
-model CheckLists {
-  id          Int       @id @default(autoincrement())
-  userId      String
-  name        String
-  description String?
-  status      Status    @default(Pending)
-  workDate    DateTime
-  siteName    String
-  isTemplate  Boolean   @default(false)
-  archivedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // リレーション
-  user      User       @relation(fields: [userId], references: [id])
-  items         CheckListItem[]
-  notifications Notification[]
-}
-
-// チェックリストアイテムテーブル（中間テーブル）
-model CheckListItem {
-  id          Int       @id @default(autoincrement())
-  checkListId Int
-  categoryId  Int
-  userId      String
-  name        String
-  description String?
-  unit        String?
-  quantity    Int?
-  status      Status    @default(Pending)
-  completedAt DateTime?
-  memo        String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // リレーション
-  user      User       @relation(fields: [userId], references: [id])
-  checkList CheckLists @relation(fields: [checkListId], references: [id])
-  category  Categories @relation(fields: [categoryId], references: [id])
-}
-
-// カテゴリーテーブル
-model Categories {
-  id           Int      @id @default(autoincrement())
-  name         String  @unique  // ユニーク制約を追加
-  description  String?
-  displayOrder Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // リレーション
-  items CheckListItem[]
 }
