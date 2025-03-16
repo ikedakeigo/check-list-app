@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import Footer from "@/components/footer/page";
 
 export const metadata: Metadata = {
   title: "C&L-現場管理アプリ",
@@ -14,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
+        {/* フッターナビゲーション */}
+        <Footer />
       </body>
     </html>
   );
