@@ -8,11 +8,17 @@ import PlusIcon from "@/components/icons/PlusIcon";
 import BackIcon from "@/components/icons/BackIcon";
 import { CheckLists } from "@prisma/client";
 
+// 拡張したチェックリスト型
+interface CheckListWithItems extends CheckLists {
+  totalItems: number;
+  completedItems: number;
+}
+
 const ChecklistsPage = () => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [checklists, setChecklists] = useState<CheckLists[]>([]);
+  const [checklists, setChecklists] = useState<CheckListWithItems[]>([]);
   const [selectedFilter, setSelectedFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState<string | undefined>("");
   const [error, setError] = useState<string | null>(null);
