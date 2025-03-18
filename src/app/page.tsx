@@ -9,38 +9,22 @@ import { NotificationRequestBody } from "./_types/notification";
 import Header from "@/components/header/page";
 import ArchiveIcon from "@/components/icons/ArchiveIcon";
 import PlusIcon from "@/components/icons/PlusIcon";
-
-
+import useAuthCheck from "./_hooks/useAuthCheck";
 
 const HonePage = () => {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [todayChecklists, setTodayChecklists] = useState<CheckListItemsRequestBody[]>([]);
   const [recentChecklists, setResentChecklists] = useState<CheckListItemsRequestBody[]>([]);
   const [notifications, setNotifications] = useState<NotificationRequestBody[]>([]);
 
-  // ログインユーザー情報を取得
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-      setUser(user);
-      fetchData(user.id);
-    };
-
-    checkUser();
-  }, [router]);
+  const authUser = useAuthCheck();
 
   // データ取得
   const fetchData = async (userId: string) => {
-    setLoading(true);
     try {
+      setLoading(true);
       // 今日のチェックリストを取得
       const tody = new Date();
       tody.setHours(0, 0, 0, 0);
@@ -48,15 +32,16 @@ const HonePage = () => {
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       const { data: todayData, error: todayError } = await supabase
-      .from("checklist")
-      .select("*")
-      .eq("user_id", userId)
-      .gte("created_at", tody.toISOString())
-      .lt("created_at", tomorrow.toISOString())
-      .is("archivedAt", null).limit(5);
+        .from("CheckLists")
+        .select("*")
+        .eq("userId", userId)
+        .gte("createdAt", tody.toISOString())
+        .lt("createdAt", tomorrow.toISOString())
+        .is("archivedAt", null)
+        .limit(5);
 
       // エラーがあればコンソールに出力
-      if(todayError) {
+      if (todayError) {
         console.error("Error fetching today checklists:", todayError);
       } else {
         // 今日のチェックリストをセット
@@ -65,27 +50,27 @@ const HonePage = () => {
 
       // 最近のチェックリストを取得
       const { data: recentData, error: recentError } = await supabase
-      .from("checklist")
-      .select("*")
-      .eq("user_id", userId)
-      .is("archivedAt", null)
-      .order("created_at", { ascending: false })
-      .limit(5);
+        .from("CheckLists")
+        .select("*")
+        .eq("userId", userId)
+        .is("archivedAt", null)
+        .order("createdAt", { ascending: false })
+        .limit(5);
 
       if (recentError) {
         console.error("Error fetching recent checklists:", recentError);
-      }else {
+      } else {
         // 最近のチェックリストをセット
         setResentChecklists(recentData || []);
       }
 
       // 通知を取得
       const { data: notifData, error: notificationError } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(3);
+        .from("Notification")
+        .select("*")
+        .eq("userId", userId)
+        .order("createdAt", { ascending: false })
+        .limit(3);
 
       if (notificationError) {
         console.error("Error fetching notifications:", notificationError);
@@ -97,11 +82,18 @@ const HonePage = () => {
       if (recentData) setResentChecklists(recentData);
       if (notifData) setNotifications(notifData);
     } catch (error) {
-      console.error("Error fetching data:", error.message);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // 認証済みユーザーが取得できたらデータを取得
+  useEffect(() => {
+    if (authUser) {
+      fetchData(authUser.id);
+    }
+  }, [authUser]);
 
   const handleSinOut = async () => {
     await supabase.auth.signOut();
@@ -124,12 +116,12 @@ const HonePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
-     <Header
-      title="現場マネジ"
-      showNotification
-      notificationCount={notifications.length}
-      userName={user?.user_metadata?.name || user?.email}
-     />
+      <Header
+        title="現場マネジ"
+        showNotification
+        notificationCount={notifications.length}
+        userName={user?.user_metadata?.name || user?.email}
+      />
 
       {/* メインコンテンツ */}
       <main className="p-4 pb-24">
@@ -158,18 +150,25 @@ const HonePage = () => {
                     <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium">{checklist.name}</h3>
-                        <span className="text-sm text-gray-500">{new Date(checklist.workDate).toLocaleDateString()}</span>
+                        <span className="text-sm text-gray-500">
+                          {new Date(checklist.workDate).toLocaleDateString()}
+                        </span>
                       </div>
                       <p className="text-sm text-gray-600 mb-2">{checklist.siteName}</p>
                       <div className="flex items-center">
                         <div className="flex-1 bg-gray-200 rounded-full h-2">
                           <div
                             className="bg-green-500 h-2 rounded-full"
-                            style={{ width: `${(checklist.completedItems || 0) / (checklist.totalItems || 1) * 100}%` }}
+                            style={{
+                              width: `${
+                                ((checklist.completedItems || 0) / (checklist.totalItems || 1)) *
+                                100
+                              }%`,
+                            }}
                           ></div>
                         </div>
                         <span className="ml-4 text-sm text-gray-600">
-                          {checklist.completedItems || 0}/{checklist.totalItems || '?'}
+                          {checklist.completedItems || 0}/{checklist.totalItems || "?"}
                         </span>
                       </div>
                     </div>
@@ -191,16 +190,24 @@ const HonePage = () => {
                     <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium">{checklist.name}</h3>
-                        <span className="text-sm text-gray-500">{new Date(checklist.createdAt).toLocaleDateString()}</span>
+                        <span className="text-sm text-gray-500">
+                          {new Date(checklist.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{checklist.siteName || '現場名なし'}</p>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {checklist.siteName || "現場名なし"}
+                      </p>
                       {/* プログレスバーの代わりに */}
                       <div className="flex justify-between text-sm">
                         <span className="text-blue-600">詳細を見る</span>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          checklist.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {checklist.status === 'Completed' ? '完了' : '進行中'}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            checklist.status === "Completed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {checklist.status === "Completed" ? "完了" : "進行中"}
                         </span>
                       </div>
                     </div>
@@ -230,7 +237,6 @@ const HonePage = () => {
           </div>
         )}
       </main>
-
     </div>
   );
 };
