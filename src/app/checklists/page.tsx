@@ -140,6 +140,75 @@ const ChecklistsPage = () => {
           ))}
         </div>
       </div>
+
+      {/* チェックリスト一覧 */}
+      <div className="p-4">
+        {loading ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 p-4 rounded-lg text-red-600 text-center">{error}</div>
+        ) : checklists.length === 0 ? (
+          <div className="bg-white p-8 rounded-lg shadow-sm text-center text-gray-500">
+            チェックリストがありません
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {checklists.map((checklist) => (
+              <div
+                key={checklist.id}
+                className="bg-white p-4 rounded-lg shadow-sm"
+                onClick={() => handleViewChecklist(checklist.id)}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-medium text-lg">{checklist.name}</h3>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      checklist.status === "Completed"
+                        ? "bg-green-100 text-green-800"
+                        : checklist.isTemplate
+                        ? "bg-purple-100 text-purple-800"
+                        : checklist.archivedAt
+                        ? "bg-gray-100 text-gray-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {checklist.status === "Completed"
+                      ? "完了"
+                      : checklist.isTemplate
+                      ? "テンプレート"
+                      : checklist.archivedAt
+                      ? "アーカイブ"
+                      : "進行中"}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-500 mb-3">
+                  {new Date(checklist.workDate).toLocaleDateString()} - {checklist.siteName}
+                </div>
+                <div className="flex items-center">
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-green-500 h-2 rounded-full"
+                      style={{
+                        width: `${
+                          ((checklist.completedItems || 0) / (checklist.totalItems || 1)) * 100
+                        }%`,
+                      }}
+                    ></div>
+                  </div>
+                  <span className="ml-4 text-sm text-gray-600">
+                    {checklist.completedItems || 0}/{checklist.totalItems || "?"}
+                  </span>
+                </div>
+                {checklist.description && (
+                  <p className="mt-3 text-sm text-gray-600 line-clamp-2">{checklist.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
