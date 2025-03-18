@@ -82,7 +82,7 @@ const HonePage = () => {
       if (recentData) setResentChecklists(recentData);
       if (notifData) setNotifications(notifData);
     } catch (error) {
-      console.error("Error fetching data:", error.message);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
