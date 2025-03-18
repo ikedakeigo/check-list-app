@@ -34,51 +34,31 @@ const ChecklistsPage = () => {
         return;
       }
       setUser(user);
-      fetchChecklists(user.id, selectedFilter);
     };
 
     checkUser();
-  }, [router, selectedFilter]);
+  }, [router]);
+
+  //チェックリストの検索条件取得
+  useEffect(() => {
+    if (user) {
+      fetchChecklists();
+    }
+    // 検索窓にユーザー情報、フィルター、検索クエリが変更された場合に再取得
+  }, [user, selectedFilter, searchQuery]);
 
   // チェックリスト取得
-  const fetchChecklists = async (userId: string, filter: string) => {
-    console.log("fetchChecklists", userId, filter);
-    setLoading(true);
-    setError(null);
-
+  const fetchChecklists = async () => {
     try {
-      // クリエ作成
-      // SupabaseではPrismaで "items" とリレーションしているが、
-      // Supabaseのスキーマキャッシュではリレーションが認識されないため、
-      // 明示的に "CheckListItem" を指定してデータを取得する
-      let query = supabase.from("CheckLists").select("*,CheckListItem(count)").eq("userId", userId);
+      setLoading(true);
+      const res = await fetch("/api/checklists?filter=${filter&search=${searchQuery}");
+      const data = await res.json();
 
-      console.log("query", query);
-      // フィルター適用
-      if (filter === "active") {
-        query = query.is("archivedAt", null).eq("isTemplate", false);
-      } else if (filter === "completed") {
-        query = query.is("archivedAt", null).eq("status", "Completed");
-      } else if (filter === "templates") {
-        query = query.eq("isTemplate", true);
-      } else if (filter === "archived") {
-        query = query.not("archivedAt", "is", null);
-      }
+      if (!res.ok) throw new Error(data.error || "エラーが発生しました");
 
-      // 検索クエリ適用
-      if (searchQuery) {
-        query = query.or(`name.ilike.%${searchQuery}%, siteName.ilike.%${searchQuery}%`);
-      }
-
-      const { data, error } = await query.order("createdAt", { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      setChecklists(data || []);
+      setChecklists(data);
     } catch (error) {
-      console.error("Error fetching checklists:", error);
+      console.error("エラーが発生しました", error);
       setError("チェックリストの取得に失敗しました");
     } finally {
       setLoading(false);
