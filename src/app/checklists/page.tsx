@@ -3,10 +3,10 @@
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import PlusIcon from "@/components/icons/PlusIcon";
 import BackIcon from "@/components/icons/BackIcon";
 import { CheckLists } from "@prisma/client";
+import useAuthCheck from "../_hooks/useAuthCheck";
 
 // 拡張したチェックリスト型
 interface CheckListWithItems extends CheckLists {
@@ -23,21 +23,15 @@ const ChecklistsPage = () => {
   const [searchQuery, setSearchQuery] = useState<string | undefined>("");
   const [error, setError] = useState<string | null>(null);
 
+  // カスタムフックを使用してログインユーザー情報を取得
+  const authUser = useAuthCheck();
+
   // ログインユーザー情報
   useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-      setUser(user);
-    };
-
-    checkUser();
-  }, [router]);
+    if (authUser) {
+      setUser(authUser);
+    }
+  }, [authUser]);
 
   //チェックリストの検索条件取得
   useEffect(() => {
