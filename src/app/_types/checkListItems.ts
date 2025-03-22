@@ -10,6 +10,7 @@ export type CheckListItemsRequestBody = {
   quantity?: number;
   unit?: string;
   memo?: string;
+  status: ChecklistStatus;
 }
 
 // export type UpdateCheckListItems = {
