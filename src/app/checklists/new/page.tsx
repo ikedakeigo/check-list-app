@@ -153,95 +153,125 @@ const NewChecklistPage = () => {
     setError(null);
     setSuccess(null);
 
+    const errors = { ...formErrors };
+
+    let hasError = false;
+
     try {
       // 入力チェック
-      if(!formData.name.trim()){
-        throw new Error('チェックリスト名を入力してください');
+      if (!formData.name.trim()) {
+        errors.name = "チェックリスト名を入力してください";
+        hasError = true;
       }
 
-      if(!formData.workDate) {
-        throw new Error('作業日を入力してください');
+      if (!formData.workDate) {
+        errors.workDate = "作業日を入力してください";
+        hasError = true;
       }
 
-      if(!formData.siteName.trim()) {
-        throw new Error('現場名を入力してください');
+      if (!formData.siteName.trim()) {
+        errors.siteName = "現場名を入力してください";
+        hasError = true;
       }
 
-      if(items.length === 0) {
-        throw new Error('アイテムを1つ以上追加してください');
+      if (items.length === 0) {
+        setError("アイテムを1つ以上追加してください");
+        hasError = true;
       }
 
-
-      // ユーザーIDの取得
-      const userId = user?.id;
-      const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('supabseUserId', userId)
-      .single();
-
-      if(userError || !userData) {
-        throw new Error('ユーザー情報の取得に失敗しました');
+      if (hasError) {
+        setFormErrors(errors);
+        setLoading(false);
+        return;
       }
 
-
-      // チェックリストを作成
-      const { data: checklistData, error: checklistError } = await supabase
-      .from('checklists')
-      .insert([
-        {
+      // チェックリストを作成するAPIを呼び出し
+      const checklistResponse = await fetch("/api/checklists", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token || "",
+        },
+        body: JSON.stringify({
           name: formData.name,
           description: formData.description,
           workDate: formData.workDate,
           siteName: formData.siteName,
           isTemplate: formData.isTemplate,
-          userId: userData.id,
-          status: 'Pending', // 初期ステータスは未完了
-        }
-      ])
-      .select()
-      .single();
+          status: "Pending", // 初期ステータスは未完了
+        }),
+      });
 
-      if(checklistError || !checklistData) {
-        throw new Error('チェックリストの作成に失敗しました');
+      if (!checklistResponse.ok) {
+        const errorData = await checklistResponse.json();
+        throw new Error(errorData.error || "チェックリストの作成に失敗しました");
       }
 
       // 作成したチェックリストのIDを取得
+      const checklistData = await checklistResponse.json();
       const checklistId = checklistData.id;
 
-      // 全てのアイテムを一括で追加
-      const itemsToInsert = items.map(item => ({
-        name: item.name,
-        quantity: item.quantity ? parseInt(item.quantity) : null,
-        unit: item.unit,
-        categoryId: item.categoryId,
-        checklistId: checklistId,
-        userId: userData.id,
-        status: 'Pending', // 初期ステータスは未完了
-      }))
+      // // 各アイテムをAPIを使って追加
+      // for (const item of items) {
+      //   const itemResponse = await fetch(`/api/checklists/${checklistId}/items`, {
+      //     method: "POST",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //       Authorization: token || "",
+      //     },
+      //     body: JSON.stringify({
+      //       name: item.name,
+      //       quantity: item.quantity ? parseInt(item.quantity) : null,
+      //       unit: item.unit,
+      //       categoryId: item.categoryId,
+      //       status: "Pending", // 初期ステータスは未完了
+      //     }),
+      //   });
 
-      const { error: itemsError } = await supabase
-      .from('checkListItems')
-      .insert(itemsToInsert);
+      //   if (!itemResponse.ok) {
+      //     const errorData = await itemResponse.json();
+      //     throw new Error(errorData.error || "アイテムの追加に失敗しました");
+      //   }
+      // }
+      await Promise.all(
+        items.map(async (item) => {
+          const res = await fetch(`/api/checklists/${checklistId}/items`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token || "",
+            },
+            body: JSON.stringify({
+              name: item.name,
+              quantity: item.quantity ? parseInt(item.quantity) : null,
+              unit: item.unit,
+              categoryId: item.categoryId,
+              status: "Pending",
+            }),
+          });
 
-      if (itemsError) {
-        throw new Error('アイテムの追加に失敗しました');
-      }
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || "アイテムの追加に失敗しました");
+          }
+        })
+      );
+
 
       // 成功メッセージを表示
-      setSuccess('チェックリストを作成しました');
+      setSuccess("チェックリストを作成しました");
 
       // 一覧ページに戻る【少し遅延させて成功メッセージを見せる】
       setTimeout(() => {
-        router.push('/checklists');
-      }, 1500)
+        router.push("/checklists");
+      }, 1500);
     } catch (error) {
-      console.error('Error creating checklist:', error)
-      setError(error.message || 'チェックリストの作成に失敗しました');
+      console.error("Error creating checklist:", error);
+      setError("チェックリストの作成に失敗しました");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
