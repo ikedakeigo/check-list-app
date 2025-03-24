@@ -225,6 +225,7 @@ const NewChecklistPage = () => {
               "Content-Type": "application/json",
               Authorization: token || "",
             },
+            // bodyはJSON形式でサーバーに送信したいデータを指定（リクエストボディ）
             body: JSON.stringify({
               name: item.name,
               quantity: item.quantity ? parseInt(item.quantity) : null,
@@ -272,7 +273,7 @@ const NewChecklistPage = () => {
           disabled={loading}
           className="px-4 py-2 bg-white bg-opacity-20 rounded-lg text-sm disabled:opacity-50"
         >
-          {loading ? '保存中...' : '保存'}
+          {loading ? "保存中..." : "保存"}
         </button>
       </header>
 
