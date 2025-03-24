@@ -32,12 +32,48 @@ export const GET = async (req: NextRequest) => {
             ]
           : undefined,
       },
+      // アイテム関連の情報を取得
+      include: {
+        items: {
+          /**
+           * リレーション先のテーブルのからidとstatusを取得
+           * selectのboolean指定は存在することではなく、取得することを示す
+           */
+          select: {
+            id: true,
+            status: true,
+          }
+        },
+        // アイテムの数を取得
+        _count: {
+          select: {
+            items: true,
+          }
+        },
+      },
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    return NextResponse.json(checklists);
+    // アイテム数情報をチェックリストに追加
+    const checklistsWithItemCounts = checklists.map(checklist => {
+      // 完了したアイテムを取得
+      const completedItmes = checklist.items.filter(
+        item => item.status === "Completed"
+      ).length;
+
+      // アイテム合計数
+      const totalItems = checklist._count.items;
+
+      return {
+        ...checklist,
+        completedItems: completedItmes,
+        totalItems,
+      };
+    })
+
+    return NextResponse.json(checklistsWithItemCounts);
   } catch (error) {
     console.error("Error fetching checklists", error);
     return NextResponse.json({ error: "Error fetching checklists" }, { status: 500 });
