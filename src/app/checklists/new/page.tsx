@@ -217,28 +217,6 @@ const NewChecklistPage = () => {
       const checklistData = await checklistResponse.json();
       const checklistId = checklistData.id;
 
-      // // 各アイテムをAPIを使って追加
-      // for (const item of items) {
-      //   const itemResponse = await fetch(`/api/checklists/${checklistId}/items`, {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //       Authorization: token || "",
-      //     },
-      //     body: JSON.stringify({
-      //       name: item.name,
-      //       quantity: item.quantity ? parseInt(item.quantity) : null,
-      //       unit: item.unit,
-      //       categoryId: item.categoryId,
-      //       status: "Pending", // 初期ステータスは未完了
-      //     }),
-      //   });
-
-      //   if (!itemResponse.ok) {
-      //     const errorData = await itemResponse.json();
-      //     throw new Error(errorData.error || "アイテムの追加に失敗しました");
-      //   }
-      // }
       await Promise.all(
         items.map(async (item) => {
           const res = await fetch(`/api/checklists/${checklistId}/items`, {
