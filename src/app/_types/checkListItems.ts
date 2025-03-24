@@ -33,3 +33,12 @@ export type UpdateCheckListItems = Partial<CheckListItemsRequestBody> & {
 export type UpdateCheckListItemStatus = {
   status: ChecklistStatus
 }
+
+
+export type NewItem = {
+  name: string;
+  quantity: string;
+  unit: string;
+  categoryId: number | null;
+  categoryName: string;
+}
