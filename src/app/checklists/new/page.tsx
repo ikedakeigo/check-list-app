@@ -292,195 +292,225 @@ const NewChecklistPage = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 基本情報 */}
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <h2 className="text-lg font-bold mb-4">基本情報</h2>
-
-            <div className="space-y-4">
-              {/* チェックリスト名 */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  チェックリスト名 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="例: 〇〇建設現場 1F工事"
-                />
-              </div>
-
-              {/* 説明 */}
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                  説明
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="例: 1階部分の内装工事に必要な工具・材料"
-                />
-              </div>
-
-              {/* 現場名 */}
-              <div>
-                <label htmlFor="siteName" className="block text-sm font-medium text-gray-700 mb-1">
-                  現場名 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="siteName"
-                  name="siteName"
-                  type="text"
-                  value={formData.siteName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="例: 〇〇マンション新築工事"
-                />
-              </div>
-
-              {/* 作業日 */}
-              <div>
-                <label htmlFor="workDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  作業日 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="workDate"
-                  name="workDate"
-                  type="date"
-                  value={formData.workDate}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* テンプレートフラグ */}
-              <div className="flex items-center">
-                <input
-                  id="isTemplate"
-                  name="isTemplate"
-                  type="checkbox"
-                  checked={formData.isTemplate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isTemplate: e.target.checked }))}
-                  className="h-4 w-4 text-blue-600 rounded"
-                />
-                <label htmlFor="isTemplate" className="ml-2 text-sm text-gray-700">
-                  テンプレートとして保存する
-                </label>
-              </div>
-            </div>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 基本情報 */}
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <h2 className="text-lg font-bold mb-4">基本情報</h2>
 
-          {/* アイテム追加 */}
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <h2 className="text-lg font-bold mb-4">アイテム追加</h2>
-
-            {/* カテゴリー選択 */}
-            <div className="mb-4">
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                カテゴリー <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="category"
-                value={selectedCategoryId || ''}
-                onChange={(e) => setSelectedCategoryId(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="" disabled>カテゴリーを選択</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 新規アイテム入力フォーム */}
-            <div className="flex flex-col space-y-3 mb-4">
-              <input
-                type="text"
-                name="name"
-                value={newItem.name}
-                onChange={handleNewItemChange}
-                placeholder="アイテム名"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  name="quantity"
-                  value={newItem.quantity}
-                  onChange={handleNewItemChange}
-                  placeholder="数量"
-                  className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                <input
-                  type="text"
-                  name="unit"
-                  value={newItem.unit}
-                  onChange={handleNewItemChange}
-                  placeholder="単位（個、台など）"
-                  className="w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleAddItem}
-                className="w-full py-2 bg-blue-600 text-white rounded-lg flex items-center justify-center"
-              >
-                <PlusIcon />
-                <span className="ml-2">アイテムを追加</span>
-              </button>
-            </div>
-
-            {/* 追加済みアイテムリスト */}
-            <div className="space-y-3 mt-6">
-              <h3 className="font-medium text-gray-700">追加済みアイテム ({items.length})</h3>
-
-              {items.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  アイテムがまだ追加されていません
-                </p>
-              ) : (
-                <div className="border border-gray-200 rounded-lg divide-y">
-                  {items.map((item, index) => (
-                    <div key={index} className="p-3 flex justify-between items-center">
-                      <div>
-                        <div className="font-medium">{item.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {item.categoryName}
-                          {item.quantity && ` • ${item.quantity} ${item.unit || '個'}`}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveItem(index)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-full"
-                      >
-                        <TrashIcon />
-                      </button>
-                    </div>
-                  ))}
+              <div className="space-y-4">
+                {/* チェックリスト名 */}
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                    チェックリスト名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleNewChecklistChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="例: 〇〇建設現場 1F工事"
+                  />
+                  {formErrors.name && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+                  )}
                 </div>
-              )}
+
+                {/* 説明 */}
+                <div>
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    説明
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleNewChecklistChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="例: 1階部分の内装工事に必要な工具・材料"
+                  />
+                </div>
+
+                {/* 現場名 */}
+                <div>
+                  <label
+                    htmlFor="siteName"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    現場名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="siteName"
+                    name="siteName"
+                    type="text"
+                    value={formData.siteName}
+                    onChange={handleNewChecklistChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="例: 〇〇マンション新築工事"
+                  />
+                  {formErrors.siteName && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.siteName}</p>
+                  )}
+                </div>
+
+                {/* 作業日 */}
+                <div>
+                  <label
+                    htmlFor="workDate"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    作業日 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="workDate"
+                    name="workDate"
+                    type="date"
+                    value={formData.workDate}
+                    onChange={handleNewChecklistChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* テンプレートフラグ */}
+                <div className="flex items-center">
+                  <input
+                    id="isTemplate"
+                    name="isTemplate"
+                    type="checkbox"
+                    checked={formData.isTemplate}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, isTemplate: e.target.checked }))
+                    }
+                    className="h-4 w-4 text-blue-600 rounded"
+                  />
+                  <label htmlFor="isTemplate" className="ml-2 text-sm text-gray-700">
+                    テンプレートとして保存する
+                  </label>
+                </div>
+              </div>
             </div>
-          </div>
-        </form>
+
+            {/* アイテム追加 */}
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <h2 className="text-lg font-bold mb-4">アイテム追加</h2>
+
+              {/* カテゴリー選択 */}
+              <div className="mb-4">
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                  カテゴリー <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="category"
+                  value={selectedCategoryId || ""}
+                  onChange={(e) => setSelectedCategoryId(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="" disabled>
+                    カテゴリーを選択
+                  </option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 新規アイテム入力フォーム */}
+              <div className="flex flex-col space-y-3 mb-4">
+                <input
+                  type="text"
+                  name="name"
+                  value={newItem.name}
+                  onChange={handleNewItemChange}
+                  placeholder="アイテム名"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    name="quantity"
+                    value={newItem.quantity}
+                    onChange={handleNewItemChange}
+                    placeholder="数量"
+                    className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="unit"
+                    value={newItem.unit}
+                    onChange={handleNewItemChange}
+                    placeholder="単位（個、台など）"
+                    className="w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAddItem}
+                  className={`w-full py-2 rounded-lg flex items-center justify-center ${
+                    newItem.name.trim() && newItem.quantity
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-300 text-gray-500"
+                  }`}
+                  disabled={!newItem.name.trim() || !newItem.quantity}
+                >
+                  <PlusIcon />
+                  <span className="ml-2">アイテムを追加</span>
+                </button>
+              </div>
+
+              {/* 追加済みアイテムリスト */}
+              <div className="space-y-3 mt-6">
+                <h3 className="font-medium text-gray-700">追加済みアイテム ({items.length})</h3>
+
+                {items.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    アイテムがまだ追加されていません
+                  </p>
+                ) : (
+                  <div className="border border-gray-200 rounded-lg divide-y">
+                    {items.map((item, index) => (
+                      <div key={index} className="p-3 flex justify-between items-center">
+                        <div>
+                          <div className="font-medium">{item.name}</div>
+                          <div className="text-sm text-gray-500">
+                            {categories.find((c) => c.id === item.categoryId)?.name}
+                            {item.quantity && ` • ${item.quantity} ${item.unit || "個"}`}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(index)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-full"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </form>
+        )}
       </main>
     </div>
   );
-}
+};
 
-export default NewChecklistPage
+export default NewChecklistPage;
