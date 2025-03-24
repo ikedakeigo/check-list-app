@@ -1,150 +1,156 @@
-'use client'
+"use client";
 
-import BackIcon from '@/components/icons/BackIcon';
-import PlusIcon from '@/components/icons/PlusIcon';
-import TrashIcon from '@/components/icons/TrashIcon';
-import { supabase } from '@/lib/supabase';
-import { CheckListItem } from '@prisma/client';
-import { User } from '@supabase/supabase-js';
-import { useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import useAuthCheck from "@/app/_hooks/useAuthCheck";
+import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
+import { AddCategory, CategoryRequestBody } from "@/app/_types/category";
+import { NewItem } from "@/app/_types/checkListItems";
+import BackIcon from "@/components/icons/BackIcon";
+import PlusIcon from "@/components/icons/PlusIcon";
+import TrashIcon from "@/components/icons/TrashIcon";
+import { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useState } from "react";
+
 
 const NewChecklistPage = () => {
   const router = useRouter();
+  const useAuth = useAuthCheck();
 
+  const { token } = useSupabaseSession();
   const [user, setUser] = useState<User | null>(null);
 
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    siteName: '',
-    workDate: new Date().toISOString().split('T')[0], // 今日の日付
+    name: "",
+    description: "",
+    siteName: "",
+    workDate: new Date().toISOString().split("T")[0], // 今日の日付
     isTemplate: false,
-  })
+  });
+
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    siteName?: string;
+    workDate?: string;
+  }>({});
 
   // カテゴリー関連の状態
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<AddCategory>([]);
+
+  // 選択中のカテゴリーID
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
   // アイテム管理の状態
-  const [items, setItems] = useState<CheckListItem[]>([]);
+  const [items, setItems] = useState<NewItem[]>([]);
+
+  // 新しいアイテムの入力状態
   const [newItem, setNewItem] = useState({
-    name: '',
-    quantity: '',
-    unit: '',
-  })
+    name: "",
+    quantity: "",
+    unit: "",
+  });
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // 初期化の処理
-  useEffect(() => {
-    console.log("hello");
-    // ユーザー情報取得
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if(!user) {
-        router.push('/login');
-        return;
-      }
-      setUser(user);
-
-      console.log('User:', user);
-      // カテゴリー取得
-      fetchCategories();
-    }
-
-    console.log("-------------------------")
-    checkUser();
-  }, [router]);
-
-
   // カテゴリー一覧を取得
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
+    if (!token) return;
+
     try {
-      // supabaseからカテゴリーを取得
-      const { data, error } = await supabase
-      .from('Categories')
-      .select('*')
-      .order('displayOrder', { ascending: true });
+      const res = await fetch("/api/categories", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+      });
+      const data: CategoryRequestBody = await res.json();
 
-      if (error) {
-        throw error;
-      }
+      if (!res.ok) throw new Error("エラーが発生しました");
 
-      setCategories(data || []);
-
-      // カテゴリーがあれば最初のカテゴリーを選択状態にする
-      if (data && data.length > 0) {
-        setSelectedCategoryId(data[0].id);
-      }
-
-      console.log('Categories:', data);
+      setCategories(data);
+      if (data.length > 0) setSelectedCategoryId(data[0].id);
 
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      setError('カテゴリーの取得に失敗しました');
+      console.error("エラーが発生しました", error);
+      setError("カテゴリーの取得に失敗しました");
+    } finally {
+      // データの取得が完了したらローディング終了
+      setLoading(false);
     }
-  }
+  }, [token]);
 
-  // フォーム入力の変更を処理する関数
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  useEffect(() => {
+    if (useAuth) {
+      setUser(useAuth);
+    }
+    setLoading(true);
+    fetchCategories();
+  }, [useAuth, fetchCategories]);
+
+  // チェックリストフォーム入力の変更を処理する関数
+  /**
+   * イベントからname,value,typeを取得し、
+   */
+  const handleNewChecklistChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value, type } = e.target;
 
     // チェックボックスの場合は特別な処理
-    if(type === 'checkbox') {
+    if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({ ...prev, [name]: checked }));
-      return
+      setFormData((prev) => ({ ...prev, [name]: checked }));
+      return;
     }
 
-
     // 通常のフォーム入力の場合
-    setFormData(prev => ({ ...prev, [name]: value }));
-  }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormErrors((prev) => ({ ...prev, [name]: "" })); // エラーメッセージをクリア
+  };
 
   // 新しいアイテムの入力変更を処理する関数
   const handleNewItemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNewItem(prev => ({ ...prev, [name]: value }));
-  }
-
+    setNewItem((prev) => ({ ...prev, [name]: value }));
+  };
 
   // アイテムをリストに追加する関数
   const handleAddItem = () => {
     // 入力チェック
     if (!newItem.name.trim()) {
-      setError('アイテム名を入力してください');
+      setError("アイテム名を入力してください");
       return;
     }
 
     // アイテムを追加
-    const item ={
+    const item = {
       name: newItem.name,
       quantity: newItem.quantity,
       unit: newItem.unit,
       categoryId: selectedCategoryId,
-      categoryName: categories.find(c => c.id === selectedCategoryId)?.name || '',
+      categoryName: categories.find((c) => c.id === selectedCategoryId)?.name || "",
     };
 
     // アイテムリストに追加
-    setItems(prev => [...prev, item]);
+    // スプレット構文を使用して新しいアイテムを追加する
+    // ...prevには既存のアイテムが入っている
+    setItems((prev) => [...prev, item]);
 
     // 入力値をクリア
     setNewItem({
-      name: '',
-      quantity: '',
-      unit: '',
-    })
+      name: "",
+      quantity: "",
+      unit: "",
+    });
 
     setError(null);
   };
 
   // アイテムを削除する関数
   const handleRemoveItem = (index: number) => {
-    setItems(prev => prev.filter((_, i) => i !== index));
-  }
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // フォーム送信処理
   const handleSubmit = async (e: React.FormEvent) => {
