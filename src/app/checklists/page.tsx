@@ -7,6 +7,7 @@ import PlusIcon from "@/components/icons/PlusIcon";
 import BackIcon from "@/components/icons/BackIcon";
 import { CheckLists } from "@prisma/client";
 import useAuthCheck from "../_hooks/useAuthCheck";
+import Link from "next/link";
 
 // 拡張したチェックリスト型
 interface CheckListWithItems extends CheckLists {
@@ -59,11 +60,6 @@ const ChecklistsPage = () => {
     }
   };
 
-  // 新規チェックリスト作成ページへ
-  const handleCreateNew = () => {
-    router.push("/checklists/new");
-  };
-
   // チェックリスト詳細ページへ
   const handleViewChecklist = (id: number) => {
     router.push(`/checklists/${id}`);
@@ -84,14 +80,12 @@ const ChecklistsPage = () => {
       <header className="bg-blue-600 text-white p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <button onClick={() => router.push("/")}>
-              <BackIcon />
-            </button>
+            <Link href="/"><BackIcon /></Link>
             <h1 className="text-xl font-bold">チェックリスト一覧</h1>
           </div>
-          <button onClick={handleCreateNew} className="bg-white bg-opacity-20 p-2 rounded-lg">
+          <Link href="/checklists/new" className="bg-white bg-opacity-20 p-2 rounded-lg">
             <PlusIcon />
-          </button>
+          </Link>
         </div>
 
         {/* 検索フォーム */}
