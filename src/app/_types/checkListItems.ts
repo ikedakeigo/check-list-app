@@ -13,6 +13,23 @@ export type CheckListItemsRequestBody = {
   status: ChecklistStatus;
 }
 
+export type TodaysCheckList = {
+  id: number;
+  name: string;
+  siteName: string;
+  workDate: string;
+  completedItems: number;
+  totalItems: number;
+}[]
+
+export type RecentCheckList = {
+  id: number;
+  name: string;
+  createdAt: string;
+  siteName: string;
+  status: ChecklistStatus;
+}[]
+
 // export type UpdateCheckListItems = {
 //   name: string;
 //   description?: string;
