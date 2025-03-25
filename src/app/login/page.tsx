@@ -21,7 +21,7 @@ const LoginPage = () => {
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const {  error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -45,7 +45,7 @@ const LoginPage = () => {
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "azure", //todo LINEが使用できないので、後ここを変更または削除
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,

@@ -11,13 +11,12 @@ import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
 
-
 const NewChecklistPage = () => {
   const router = useRouter();
   const useAuth = useAuthCheck();
 
   const { token } = useSupabaseSession();
-  const [user, setUser] = useState<User | null>(null);
+  const [, setUser] = useState<User | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -70,7 +69,6 @@ const NewChecklistPage = () => {
 
       setCategories(data);
       if (data.length > 0) setSelectedCategoryId(data[0].id);
-
     } catch (error) {
       console.error("エラーが発生しました", error);
       setError("カテゴリーの取得に失敗しました");
@@ -241,7 +239,6 @@ const NewChecklistPage = () => {
           }
         })
       );
-
 
       // 成功メッセージを表示
       setSuccess("チェックリストを作成しました");
