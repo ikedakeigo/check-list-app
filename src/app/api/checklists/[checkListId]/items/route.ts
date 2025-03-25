@@ -11,17 +11,21 @@ export const GET = async (req: NextRequest, { params }: { params: { checkListId:
   // ログインされたユーザーか判断する
   const token = req.headers.get("Authorization") ?? "";
   // supabaseに対してtokenを送る
-  const { error } = await supabase.auth.getUser(token);
+  const { error, data } = await supabase.auth.getUser(token);
 
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
   if (error) {
     return NextResponse.json({ status: error.message }, { status: 400 });
   }
 
+  const supabaseUserId = data.user.id;
+
   try {
     const items = await prisma.checkListItem.findMany({
       where: {
         checkListId: parseInt(params.checkListId),
+        // ログインユーザーのチェックリストアイテムのみ取得
+        user: { supabaseUserId },
       },
       include: {
         category: true,
@@ -63,11 +67,8 @@ export const POST = async (req: NextRequest, { params }: { params: { checkListId
       where: { supabaseUserId },
     });
 
-    if(!userData) {
-      return NextResponse.json(
-        {error: "User not found"},
-        {status: 404}
-      )
+    if (!userData) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // チェックリストアイテムを作成
