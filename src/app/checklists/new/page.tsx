@@ -297,7 +297,7 @@ const NewChecklistPage = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 基本情報 */}
             <div className="bg-white p-4 rounded-lg shadow-sm">
-              <h2 className="text-lg font-bold mb-4">基本情報</h2>
+              <h2 className="text-lg font-bold mb-4 text-black">基本情報</h2>
 
               <div className="space-y-4">
                 {/* チェックリスト名 */}
@@ -312,7 +312,7 @@ const NewChecklistPage = () => {
                     value={formData.name}
                     onChange={handleNewChecklistChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                     placeholder="例: 〇〇建設現場 1F工事"
                   />
                   {formErrors.name && (
@@ -334,7 +334,7 @@ const NewChecklistPage = () => {
                     value={formData.description}
                     onChange={handleNewChecklistChange}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                     placeholder="例: 1階部分の内装工事に必要な工具・材料"
                   />
                 </div>
@@ -354,7 +354,7 @@ const NewChecklistPage = () => {
                     value={formData.siteName}
                     onChange={handleNewChecklistChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                     placeholder="例: 〇〇マンション新築工事"
                   />
                   {formErrors.siteName && (
@@ -377,7 +377,7 @@ const NewChecklistPage = () => {
                     value={formData.workDate}
                     onChange={handleNewChecklistChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                   />
                 </div>
 
@@ -402,7 +402,7 @@ const NewChecklistPage = () => {
 
             {/* アイテム追加 */}
             <div className="bg-white p-4 rounded-lg shadow-sm">
-              <h2 className="text-lg font-bold mb-4">アイテム追加</h2>
+              <h2 className="text-lg font-bold mb-4 text-black">アイテム追加</h2>
 
               {/* カテゴリー選択 */}
               <div className="mb-4">
@@ -413,7 +413,7 @@ const NewChecklistPage = () => {
                   id="category"
                   value={selectedCategoryId || ""}
                   onChange={(e) => setSelectedCategoryId(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                 >
                   <option value="" disabled>
                     カテゴリーを選択
@@ -428,13 +428,16 @@ const NewChecklistPage = () => {
 
               {/* 新規アイテム入力フォーム */}
               <div className="flex flex-col space-y-3 mb-4">
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                  アイテム詳細 <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   name="name"
                   value={newItem.name}
                   onChange={handleNewItemChange}
                   placeholder="アイテム名"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                 />
 
                 <div className="flex space-x-2">
@@ -444,7 +447,7 @@ const NewChecklistPage = () => {
                     value={newItem.quantity}
                     onChange={handleNewItemChange}
                     placeholder="数量"
-                    className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                   />
                   <input
                     type="text"
@@ -452,7 +455,7 @@ const NewChecklistPage = () => {
                     value={newItem.unit}
                     onChange={handleNewItemChange}
                     placeholder="単位（個、台など）"
-                    className="w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                   />
                 </div>
 
@@ -484,7 +487,7 @@ const NewChecklistPage = () => {
                     {items.map((item, index) => (
                       <div key={index} className="p-3 flex justify-between items-center">
                         <div>
-                          <div className="font-medium">{item.name}</div>
+                          <div className="font-medium text-black">{item.name}</div>
                           <div className="text-sm text-gray-500">
                             {categories.find((c) => c.id === item.categoryId)?.name}
                             {item.quantity && ` • ${item.quantity} ${item.unit || "個"}`}
