@@ -28,7 +28,6 @@ const useAuthCheck = () => {
     checkUser();
   }, [router]);
 
-  console.log("🐧🐧🐧🐧 ~ useAuthCheck ~ user:", user);
 
   return user;
 };

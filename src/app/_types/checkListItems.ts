@@ -10,7 +10,25 @@ export type CheckListItemsRequestBody = {
   quantity?: number;
   unit?: string;
   memo?: string;
+  status: ChecklistStatus;
 }
+
+export type TodaysCheckList = {
+  id: number;
+  name: string;
+  siteName: string;
+  workDate: string;
+  completedItems: number;
+  totalItems: number;
+}[]
+
+export type RecentCheckList = {
+  id: number;
+  name: string;
+  createdAt: string;
+  siteName: string;
+  status: ChecklistStatus;
+}[]
 
 // export type UpdateCheckListItems = {
 //   name: string;
@@ -31,4 +49,13 @@ export type UpdateCheckListItems = Partial<CheckListItemsRequestBody> & {
 
 export type UpdateCheckListItemStatus = {
   status: ChecklistStatus
+}
+
+
+export type NewItem = {
+  name: string;
+  quantity: string;
+  unit: string;
+  categoryId: number | null;
+  categoryName: string;
 }

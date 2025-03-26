@@ -2,24 +2,28 @@
 
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { CheckListItemsRequestBody } from "./_types/checkListItems";
+import { RecentCheckList, TodaysCheckList } from "./_types/checkListItems";
 import { NotificationRequestBody } from "./_types/notification";
 import Header from "@/components/header/page";
 import ArchiveIcon from "@/components/icons/ArchiveIcon";
 import PlusIcon from "@/components/icons/PlusIcon";
 import useAuthCheck from "./_hooks/useAuthCheck";
+import Link from "next/link";
 
-const HonePage = () => {
-  const router = useRouter();
+const HomePage = () => {
   const [user] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [todayChecklists, setTodayChecklists] = useState<CheckListItemsRequestBody[]>([]);
-  const [recentChecklists, setResentChecklists] = useState<CheckListItemsRequestBody[]>([]);
+  const [todayChecklists, setTodayChecklists] = useState<TodaysCheckList>([]);
+  const [recentChecklists, setResentChecklists] = useState<RecentCheckList>([]);
   const [notifications, setNotifications] = useState<NotificationRequestBody[]>([]);
 
   const authUser = useAuthCheck();
+
+  // 新規チェックリスト作成ページへ
+  // const handleCreateNew = () => {
+  //   router.push("/checklists/new");
+  // };
 
   // データ取得
   const fetchData = async (userId: string) => {
@@ -95,10 +99,10 @@ const HonePage = () => {
     }
   }, [authUser]);
 
-  const handleSinOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
+  // const handleSinOut = async () => {
+  //   await supabase.auth.signOut();
+  //   router.push("/login");
+  // };
 
   // ダミーデータ
   const stats = [
@@ -108,11 +112,12 @@ const HonePage = () => {
   ];
 
   // サンプルデータ
-  const dummyChecklists = [
-    { id: 1, title: "サンプルチェックリスト", date: "2021-09-01", completed: 8, total: 10 },
-    { id: 2, name: "△△改修工事", date: "2024-01-18", completed: 5, total: 5 },
-    { id: 3, name: "××ビル設備工事", date: "2024-01-17", completed: 12, total: 15 },
-  ];
+  // const dummyChecklists = [
+  //   { id: 1, title: "サンプルチェックリスト", date: "2021-09-01", completed: 8, total: 10 },
+  //   { id: 2, name: "△△改修工事", date: "2024-01-18", completed: 5, total: 5 },
+  //   { id: 3, name: "××ビル設備工事", date: "2024-01-17", completed: 12, total: 15 },
+  // ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
@@ -146,7 +151,7 @@ const HonePage = () => {
               <h2 className="text-lg font-bold mb-4">今日の現場</h2>
               <div className="space-y-3">
                 {todayChecklists.length > 0 ? (
-                  todayChecklists.map((checklist: any) => (
+                  todayChecklists.map((checklist) => (
                     <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium">{checklist.name}</h3>
@@ -186,7 +191,7 @@ const HonePage = () => {
               <h2 className="text-lg font-bold mb-4">最近のチェックリスト</h2>
               <div className="space-y-3">
                 {recentChecklists.length > 0 ? (
-                  recentChecklists.map((checklist: any) => (
+                  recentChecklists.map((checklist) => (
                     <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium">{checklist.name}</h3>
@@ -224,14 +229,14 @@ const HonePage = () => {
             <div>
               <h2 className="text-lg font-bold mb-4">クイックアクション</h2>
               <div className="grid grid-cols-2 gap-4">
-                <button className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600">
-                  <PlusIcon />
+                <Link href="/checklists/new" className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600">
+                <PlusIcon />
                   <span>新規チェックリスト</span>
-                </button>
-                <button className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600">
+                </Link>
+                <Link href="/archive" className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600">
                   <ArchiveIcon />
                   <span>アーカイブ一覧</span>
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -241,4 +246,4 @@ const HonePage = () => {
   );
 };
 
-export default HonePage;
+export default HomePage;
