@@ -74,6 +74,9 @@ const ChecklistsPage = () => {
     { id: "archived", label: "アーカイブ" },
   ];
 
+
+  console.log("checklists------>", checklists);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
