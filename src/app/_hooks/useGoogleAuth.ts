@@ -19,7 +19,11 @@ const useGoogleAuth = () => {
 
       if( error ) throw error;
     } catch (error) {
-      setError(error.message || 'Googleでの登録に失敗しました');
+      if (error instanceof Error){
+        setError(error.message);
+      }else{
+        setError('Googleでの登録に失敗しました');
+      }
     } finally {
       setLoading(false);
     }
