@@ -1,3 +1,5 @@
+import { FeatchCategory } from "./category";
+
 export enum ChecklistStatus {
   Pending = "Pending",
   Completed = "Completed"
@@ -29,6 +31,18 @@ export type RecentCheckList = {
   siteName: string;
   status: ChecklistStatus;
 }[]
+
+export type FetchCheckListItems = {
+  id: number;
+  name: string;
+  description: string;
+  categoryId: number;
+  quantity: number;
+  unit: string;
+  memo: string;
+  status: ChecklistStatus;
+  category: FeatchCategory;
+}
 
 // export type UpdateCheckListItems = {
 //   name: string;
