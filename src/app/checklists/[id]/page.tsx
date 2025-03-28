@@ -1,9 +1,10 @@
 "use client";
 
-import useAuthCheck from "@/app/_hooks/useAuthCheck";
+// import useAuthCheck from "@/app/_hooks/useAuthCheck";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
-import { supabase } from "@/lib/supabase";
-import { CheckListItem } from "@prisma/client";
+import { FetchCheckListItems } from "@/app/_types/checkListItems";
+// import { supabase } from "@/lib/supabase";
+import { CheckListItem, CheckLists } from "@prisma/client";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -12,10 +13,10 @@ const ChecklistDetailPage = () => {
   const { id, checkListId } = useParams();
   const router = useRouter();
   const { token } = useSupabaseSession();
-  const authUser = useAuthCheck();
+  // const authUser = useAuthCheck();
 
-  const [checklist, setChecklist] = useState<CheckListItem | null>(null);
-  const [items, setItems] = useState<CheckListItem[]>([]);
+  const [checklist, setChecklist] = useState<CheckLists | null>(null);
+  const [items, setItems] = useState<FetchCheckListItems>([]);
   const [groupedItems, setGroupedItems] = useState<Record<string, CheckListItem[]>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +38,7 @@ const ChecklistDetailPage = () => {
         if (!checklistRes.ok) throw new Error("チェックリストの取得に失敗しました");
 
         const checklistData = await checklistRes.json();
+        console.log("🐧🐧🐧🐧 ~ fetchChecklist ~ checklistData:", checklistData);
         setChecklist(checklistData);
 
         // チェックリストのアイテムを取得
@@ -49,6 +51,8 @@ const ChecklistDetailPage = () => {
         if (!itemsRes.ok) throw new Error("チェックリストのアイテムの取得に失敗しました");
 
         const itemsData = await itemsRes.json();
+        console.log("🐧🐧🐧🐧 ~ fetchChecklist ~ itemsData:", itemsData);
+
         setItems(itemsData);
 
         // カテゴリごとにアイテムをグループ化
@@ -57,7 +61,7 @@ const ChecklistDetailPage = () => {
          * キーがカテゴリー名、値がアイテムの配列
          */
         const grouped: Record<string, CheckListItem[]> = {};
-        itemsData.forEach((item) => {
+        itemsData.forEach((item: any) => {
           const categoryName = item.category.name;
           // カテゴリー名がキーに存在しない場合は新しく配列を作成
           if (!grouped[categoryName]) {
@@ -86,14 +90,14 @@ const ChecklistDetailPage = () => {
   }, [id, token]);
 
   // アイテムのステータスを更新
-  const handleItemsStatusChange = async (itemId: number, newStatus: boolean) => {
+  const handleItemsStatusChange = async (itemId: number, newStatus: "Pending" | "Completed") => {
     try {
-      const token = await supabase.auth.session();
+      if (!token) return;
 
       const res = await fetch(`/api/checklists/${id}/items/${itemId}`, {
         method: "PATCH",
         headers: {
-          Authorization: `Bearer ${token?.access_token}`,
+          Authorization: token,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ status: newStatus }),
@@ -105,6 +109,11 @@ const ChecklistDetailPage = () => {
       const updatedItem = await res.json();
 
       // アイテム一覧を更新
+      /**
+       * mapは配列で渡すので、型をオブジェクトとして渡せばエラーが出る
+       * そのため、mapの引数に型を指定する
+       *
+       */
       setItems(items.map((item) => (item.id === itemId ? updatedItem : item)));
 
       // グループ化されたアイテムも更新
@@ -129,12 +138,12 @@ const ChecklistDetailPage = () => {
     if (!confirm("チェックリストをアーカイブしますか？")) return;
 
     try {
-      const token = await supabase.auth.session();
+        if (!token) return;
 
       const res = await fetch(`/api/checklists/${checkListId}/archive`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token?.access_token}`,
+          Authorization: token,
         },
       });
 
@@ -239,32 +248,36 @@ const ChecklistDetailPage = () => {
         <main className="p-4">
           {/* チェックリスト情報 */}
           <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-            <h2 className="text-xl font-bold text-gray-900">{checklist.name}</h2>
-            {checklist.description && <p className="mt-2 text-gray-600">{checklist.description}</p>}
+            <h2 className="text-xl font-bold text-gray-900">{checklist?.name}</h2>
+            {checklist?.description && <p className="mt-2 text-gray-600">{checklist?.description}</p>}
             <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-              <div>
+                <div>
                 <span className="text-gray-500">日付: </span>
-                <span>{new Date(checklist.workDate).toLocaleDateString()}</span>
-              </div>
+                {checklist?.workDate && (
+                  <span>{new Date(checklist.workDate).toLocaleDateString()}</span>
+                )}
+                </div>
               <div>
                 <span className="text-gray-500">現場名: </span>
-                <span>{checklist.siteName}</span>
+                <span>{checklist?.siteName}</span>
               </div>
               <div>
                 <span className="text-gray-500">ステータス: </span>
                 <span
                   className={`px-2 py-1 rounded-full text-xs ${
-                    checklist.status === "Completed"
+                    checklist?.status === "Completed"
                       ? "bg-green-100 text-green-800"
                       : "bg-blue-100 text-blue-800"
                   }`}
                 >
-                  {checklist.status === "Completed" ? "完了" : "進行中"}
+                  {checklist?.status === "Completed" ? "完了" : "進行中"}
                 </span>
               </div>
               <div>
                 <span className="text-gray-500">作成日: </span>
-                <span>{new Date(checklist.createdAt).toLocaleDateString()}</span>
+                {checklist?.createdAt && (
+                  <span>{new Date(checklist.createdAt).toLocaleDateString()}</span>
+                )}
               </div>
             </div>
           </div>
