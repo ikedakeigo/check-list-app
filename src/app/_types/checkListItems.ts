@@ -42,7 +42,7 @@ export type FetchCheckListItems = {
   memo: string;
   status: ChecklistStatus;
   category: FeatchCategory;
-}
+}[]
 
 // export type UpdateCheckListItems = {
 //   name: string;
