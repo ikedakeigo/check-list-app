@@ -38,7 +38,6 @@ const ChecklistDetailPage = () => {
         if (!checklistRes.ok) throw new Error("チェックリストの取得に失敗しました");
 
         const checklistData = await checklistRes.json();
-        console.log("🐧🐧🐧🐧 ~ fetchChecklist ~ checklistData:", checklistData);
         setChecklist(checklistData);
 
         // チェックリストのアイテムを取得
@@ -51,7 +50,6 @@ const ChecklistDetailPage = () => {
         if (!itemsRes.ok) throw new Error("チェックリストのアイテムの取得に失敗しました");
 
         const itemsData = await itemsRes.json();
-        console.log("🐧🐧🐧🐧 ~ fetchChecklist ~ itemsData:", itemsData);
 
         setItems(itemsData);
 
@@ -72,7 +70,6 @@ const ChecklistDetailPage = () => {
         });
 
         setGroupedItems(grouped);
-
       } catch (error) {
         if (error instanceof Error) {
           setError(error.message);
@@ -89,12 +86,31 @@ const ChecklistDetailPage = () => {
     }
   }, [id, token]);
 
+
+  // アイテムのステータス更新ロジック
+  const updateItemStatusInState = (updatedItem: CheckListItem) => {
+    // 全体アイテム更新
+    //todo itemsの型を修正する
+    setItems((prev) => prev.map((item: any) => (item.id === updatedItem.id ? updatedItem : item)));
+
+    // グループ化されたアイテムの更新
+    setGroupedItems((prev) => {
+      const newGroupedItems = { ...prev };
+      Object.keys(newGroupedItems).forEach((categoryName) => {
+        newGroupedItems[categoryName] = newGroupedItems[categoryName].map((item) =>
+          item.id === updatedItem.id ? updatedItem : item
+        );
+      });
+      return newGroupedItems;
+    });
+  };
+
   // アイテムのステータスを更新
   const handleItemsStatusChange = async (itemId: number, newStatus: "Pending" | "Completed") => {
     try {
       if (!token) return;
 
-      const res = await fetch(`/api/checklists/${id}/items/${itemId}`, {
+      const res = await fetch(`/api/checklists/${id}/items/${itemId}/status`, {
         method: "PATCH",
         headers: {
           Authorization: token,
@@ -107,23 +123,7 @@ const ChecklistDetailPage = () => {
 
       // アイテムのステータスを更新
       const updatedItem = await res.json();
-
-      // アイテム一覧を更新
-      /**
-       * mapは配列で渡すので、型をオブジェクトとして渡せばエラーが出る
-       * そのため、mapの引数に型を指定する
-       *
-       */
-      setItems(items.map((item) => (item.id === itemId ? updatedItem : item)));
-
-      // グループ化されたアイテムも更新
-      const newGroupedItems = { ...groupedItems };
-      Object.keys(newGroupedItems).forEach((categoryName) => {
-        newGroupedItems[categoryName] = newGroupedItems[categoryName].map((item) =>
-          item.id === itemId ? updatedItem : item
-        );
-      });
-      setGroupedItems(newGroupedItems);
+      updateItemStatusInState(updatedItem);
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -138,7 +138,7 @@ const ChecklistDetailPage = () => {
     if (!confirm("チェックリストをアーカイブしますか？")) return;
 
     try {
-        if (!token) return;
+      if (!token) return;
 
       const res = await fetch(`/api/checklists/${checkListId}/archive`, {
         method: "POST",
@@ -156,6 +156,46 @@ const ChecklistDetailPage = () => {
         setError(error.message);
       } else {
         setError("チェックリストのアーカイブに失敗しました");
+      }
+    }
+  };
+
+  // 全てのアイテムのステータスを更新
+  const handleCompleteAllItems = async () => {
+
+    if (!confirm("全てのアイテムを完了にしますか？")) return;
+
+    try {
+      if (!token) return;
+
+      // 未完了のアイテムを取得
+      const pendingItems = items.filter((item) => item.status === "Pending");
+
+      const res = await fetch(`/api/checklists/${id}/items`, {
+        method: "PATCH",
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "Completed",
+          itemIds: pendingItems.map((item) => item.id),
+        }),
+      });
+
+      if(!res.ok) throw new Error("全てのアイテムの完了に失敗しました");
+
+      // アイテムのステータスを更新
+      const updatedItems: CheckListItem[] = await res.json();
+
+      // 各アイテムのステータスを更新
+      updatedItems.forEach(updateItemStatusInState);
+      alert("全てのアイテムを完了にしました");
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("全てのアイテムの完了に失敗しました");
       }
     }
   };
@@ -249,14 +289,16 @@ const ChecklistDetailPage = () => {
           {/* チェックリスト情報 */}
           <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
             <h2 className="text-xl font-bold text-gray-900">{checklist?.name}</h2>
-            {checklist?.description && <p className="mt-2 text-gray-600">{checklist?.description}</p>}
+            {checklist?.description && (
+              <p className="mt-2 text-gray-600">{checklist?.description}</p>
+            )}
             <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                <div>
+              <div>
                 <span className="text-gray-500">日付: </span>
                 {checklist?.workDate && (
                   <span>{new Date(checklist.workDate).toLocaleDateString()}</span>
                 )}
-                </div>
+              </div>
               <div>
                 <span className="text-gray-500">現場名: </span>
                 <span>{checklist?.siteName}</span>
@@ -304,7 +346,10 @@ const ChecklistDetailPage = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-3">{categoryName}</h3>
               <div className="space-y-3">
                 {categoryItems.map((item) => (
-                  <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm flex items-start">
+                  <div
+                    key={`${item.name}-${item.id}`}
+                    className="bg-white p-4 rounded-lg shadow-sm flex items-start"
+                  >
                     <input
                       type="checkbox"
                       checked={item.status === "Completed"}
@@ -324,6 +369,7 @@ const ChecklistDetailPage = () => {
                           }`}
                         >
                           {item.name}
+                          {item.id}
                         </h4>
                         {item.quantity && item.unit && (
                           <span className="text-sm text-gray-500">
@@ -355,6 +401,26 @@ const ChecklistDetailPage = () => {
             </div>
           ))}
 
+          {/* 全て完了ボタン */}
+          {items.length > 0 && items.some((item) => item.status === "Pending") && (
+            <div className="flex justify-center mb-6">
+              <button
+                onClick={handleCompleteAllItems}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                全てのアイテムを完了にする
+              </button>
+            </div>
+          )}
+
           {totalItems === 0 && (
             <div className="bg-gray-50 p-8 text-center text-gray-500 rounded-lg border-2 border-dashed border-gray-300">
               <p>アイテムがありません</p>
@@ -371,7 +437,7 @@ const ChecklistDetailPage = () => {
       {/* フローティングアクションボタン */}
       <Link
         href={`/checklists/${id}/edit`}
-        className="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
+        className="fixed bottom-15 right-6 bg-blue-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
