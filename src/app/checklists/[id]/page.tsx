@@ -87,8 +87,9 @@ const ChecklistDetailPage = () => {
   // アイテムのステータス更新ロジック
   const updateItemStatusInState = (updatedItem: CheckListItem) => {
     // 全体アイテム更新
-    //todo itemsの型を修正する
-    setItems((prev) => prev.map((item: any) => (item.id === updatedItem.id ? updatedItem : item)));
+    setItems((prev) =>
+      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+    );
 
     // グループ化されたアイテムの更新
     setGroupedItems((prev) => {
