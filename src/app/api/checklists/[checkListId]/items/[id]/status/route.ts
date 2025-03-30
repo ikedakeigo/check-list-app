@@ -18,38 +18,43 @@ export const PATCH = async (
   const { error, data } = await supabase.auth.getUser(token);
 
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
-  if (error) {
-    return NextResponse.json({ status: error.message }, { status: 400 });
-  }
-
   if (error || !data.user) {
-    throw new Error("ユーザーは登録されていません。");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabaseUserId = data.user.id;
+  const body: UpdateCheckListItemStatus = await req.json();
+  const { status } = body;
 
   try {
-    const body: UpdateCheckListItemStatus = await req.json();
-    const { status } = body;
-
-    /**
-     * prismaではネストされたオブジェクトを直接指定することができない
-     * updateの代わりにupdateManyを採用
-     * userオブジェクトのsupabaseUserIdを参照することができる
-     */
-    const item = await prisma.checkListItem.update({
+    // 所有者をチェックする
+    const existingItem = await prisma.checkListItem.findFirst({
       where: {
         id: parseInt(params.id),
         checkListId: parseInt(params.checkListId),
         user: { supabaseUserId },
       },
+      include: {
+        category: true,
+      }
+    })
+
+    if (!existingItem) {
+      return NextResponse.json({ error: "対象アイテムが見つからないか、アクセス権がありません。" }, { status: 404 });
+    }
+
+    // 更新
+    const updatedItem = await prisma.checkListItem.update({
+      where: {
+        id: parseInt(params.id),
+      },
       data: {
         status,
         completedAt: status === "Completed" ? new Date() : null,
       },
-    });
+    })
 
-    return NextResponse.json(item, { status: 200 });
+    return NextResponse.json({ ...updatedItem, category: existingItem.category }, { status: 200 });
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
