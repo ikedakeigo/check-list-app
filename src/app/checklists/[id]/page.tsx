@@ -1,9 +1,6 @@
 "use client";
 
-// import useAuthCheck from "@/app/_hooks/useAuthCheck";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
-import { FetchCheckListItems } from "@/app/_types/checkListItems";
-// import { supabase } from "@/lib/supabase";
 import { CheckListItem, CheckLists } from "@prisma/client";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
