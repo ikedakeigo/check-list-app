@@ -1,3 +1,4 @@
+import { CheckListItem } from "@prisma/client";
 import { FeatchCategory } from "./category";
 
 export enum ChecklistStatus {
@@ -32,28 +33,6 @@ export type RecentCheckList = {
   status: ChecklistStatus;
 }[]
 
-export type FetchCheckListItems = {
-  id: number;
-  name: string;
-  description: string;
-  categoryId: number;
-  quantity: number;
-  unit: string;
-  memo: string;
-  status: ChecklistStatus;
-  category: FeatchCategory;
-}[]
-
-// export type UpdateCheckListItems = {
-//   name: string;
-//   description?: string;
-//   categoryId: number;
-//   quantity?: number;
-//   unit?: string;
-//   memo?: string;
-//   status: ChecklistStatus;
-// }
-
 /**
  * Partial<T>を使用してコードの省略
  */
@@ -73,3 +52,7 @@ export type NewItem = {
   categoryId: number | null;
   categoryName: string;
 }
+
+export type GroupedItemsType = {
+  [categoryName: string]: CheckListItem[];
+};
