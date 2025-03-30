@@ -1,6 +1,7 @@
 "use client";
 
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
+import { GroupedItemsType } from "@/app/_types/checkListItems";
 import { CheckListItem, CheckLists } from "@prisma/client";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -10,11 +11,10 @@ const ChecklistDetailPage = () => {
   const { id, checkListId } = useParams();
   const router = useRouter();
   const { token } = useSupabaseSession();
-  // const authUser = useAuthCheck();
 
   const [checklist, setChecklist] = useState<CheckLists | null>(null);
-  const [items, setItems] = useState<FetchCheckListItems>([]);
-  const [groupedItems, setGroupedItems] = useState<Record<string, CheckListItem[]>>({});
+  const [items, setItems] = useState<CheckListItem[]>([]);
+  const [groupedItems, setGroupedItems] = useState<GroupedItemsType>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
