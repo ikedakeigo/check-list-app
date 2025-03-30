@@ -151,6 +151,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: { checkListI
       where: {
         id: { in: itemIds },
       },
+      include: {
+        category: true,
+      },
     });
 
     return NextResponse.json(updatedItems, { status: 200 });
