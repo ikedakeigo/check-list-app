@@ -120,8 +120,58 @@ const ChecklistDetailPage = () => {
       if (!res.ok) throw new Error("アイテムのステータスの更新に失敗しました");
 
       // アイテムのステータスを更新
-      const updatedItem = await res.json();
+      const updatedItem: CheckListItem = await res.json();
+
+      // ローカル状態の更新
       updateItemStatusInState(updatedItem);
+
+      const updatedItems = items.map((item) =>
+        // 対象のアイテムだけ（クリックしたアイテム）ステータスを更新し、それ以外はそのまま返す
+        item.id === itemId ? { ...item, status: newStatus } : item
+      );
+
+      // 全てのアイテムが完了した場合、チェックリストのステータスを更新
+      const allItemsCompleted = updatedItems.every((item) => item.status === "Completed");
+
+      // チェックリストのステータスが「Completed」でない場合のみ更新
+      if (allItemsCompleted && checklist?.status !== "Completed") {
+        // チェックリストのステータスを更新
+        const checklistResult = await fetch(`/api/checklists/${id}`, {
+          method: "PATCH",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "Completed" }),
+        });
+
+        if (!checklistResult.ok) throw new Error("チェックリストのステータスの更新に失敗しました");
+
+        // チェックリストのステータスを更新
+        const updatedChecklist = await checklistResult.json();
+
+        // ステータスを「Completed」に更新
+        setChecklist(updatedChecklist);
+        alert("全てのアイテムが完了しました");
+
+        // アイテムが未完了の場合、チェックリストのステータスを「進行中」に戻す
+      } else if (!allItemsCompleted && checklist?.status === "Completed") {
+
+        // チェックリストのステータスを「進行中」に戻す
+        const checklistResult = await fetch(`/api/checklists/${id}`, {
+          method: "PATCH",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "Pending" }),
+        });
+
+        if (!checklistResult.ok) throw new Error("チェックリストのステータスの更新に失敗しました");
+
+        const updatedChecklist = await checklistResult.json();
+        setChecklist(updatedChecklist);
+      }
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
