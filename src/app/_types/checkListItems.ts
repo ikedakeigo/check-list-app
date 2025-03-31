@@ -56,3 +56,8 @@ export type NewItem = {
 export type GroupedItemsType = {
   [categoryName: string]: CheckListItem[];
 };
+
+export type UpdateCheckListItemsStatusRequest = {
+  status: "Completed" | "Pending";
+  itemIds: number[];
+};

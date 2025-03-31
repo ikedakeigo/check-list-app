@@ -1,4 +1,4 @@
-import { CheckListItemsRequestBody } from "@/app/_types/checkListItems";
+import { CheckListItemsRequestBody, UpdateCheckListItemsStatusRequest } from "@/app/_types/checkListItems";
 import { supabase } from "@/lib/supabase";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -98,10 +98,6 @@ export const POST = async (req: NextRequest, { params }: { params: { checkListId
   }
 };
 
-type UpdateCheckListItemsStatusRequest = {
-  status: "Completed" | "Pending";
-  itemIds: number[];
-};
 
 // チェックリストアイテムのステータス一括更新
 export const PATCH = async (req: NextRequest, { params }: { params: { checkListId: string } }) => {
