@@ -130,7 +130,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: { checkListI
     if (!userData) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    await prisma.checkListItem.updateMany({
+
+
+    const updatedItems = await prisma.checkListItem.updateManyAndReturn({
       where: {
         id: { in: itemIds },
         checkListId: parseInt(params.checkListId),
@@ -140,17 +142,33 @@ export const PATCH = async (req: NextRequest, { params }: { params: { checkListI
         status,
         completedAt: status === "Completed" ? new Date() : null,
       },
-    });
-
-    // 更新されたアイテムを返す（オプション）
-    const updatedItems = await prisma.checkListItem.findMany({
-      where: {
-        id: { in: itemIds },
-      },
       include: {
         category: true,
       },
-    });
+    })
+
+    // updateManyAndReturnで下記は不要
+    // await prisma.checkListItem.updateMany({
+    //   where: {
+    //     id: { in: itemIds },
+    //     checkListId: parseInt(params.checkListId),
+    //     user: { supabaseUserId },
+    //   },
+    //   data: {
+    //     status,
+    //     completedAt: status === "Completed" ? new Date() : null,
+    //   },
+    // });
+
+    // // 更新されたアイテムを返す（オプション）
+    // const updatedItems = await prisma.checkListItem.findMany({
+    //   where: {
+    //     id: { in: itemIds },
+    //   },
+    //   include: {
+    //     category: true,
+    //   },
+    // });
 
     return NextResponse.json(updatedItems, { status: 200 });
   } catch (error) {
