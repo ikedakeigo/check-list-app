@@ -102,7 +102,7 @@ export const PATCH = async (
 
   try {
     const body: CheckListRequestBody = await req.json()
-    const { name, description, workDate, siteName, isTemplate } = body
+    const { name, description, workDate, siteName, isTemplate, status } = body
 
     const checkList = await prisma.checkLists.update({
       where: {
@@ -115,6 +115,7 @@ export const PATCH = async (
         workDate: workDate ? new Date(workDate) : undefined,
         siteName,
         isTemplate,
+        status,
       }
     })
 

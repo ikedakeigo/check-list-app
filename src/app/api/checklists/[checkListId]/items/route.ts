@@ -1,4 +1,4 @@
-import { CheckListItemsRequestBody } from "@/app/_types/checkListItems";
+import { CheckListItemsRequestBody, UpdateCheckListItemsStatusRequest } from "@/app/_types/checkListItems";
 import { supabase } from "@/lib/supabase";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -89,6 +89,88 @@ export const POST = async (req: NextRequest, { params }: { params: { checkListId
     });
 
     return NextResponse.json(item, { status: 201 });
+  } catch (error) {
+    console.error("Error creating checklist item:", error);
+    return NextResponse.json(
+      { error: "チェックリストアイテムの作成に失敗しました" },
+      { status: 500 }
+    );
+  }
+};
+
+
+// チェックリストアイテムのステータス一括更新
+export const PATCH = async (req: NextRequest, { params }: { params: { checkListId: string } }) => {
+  // フロントエンドから送られてきたtokenより
+  // ログインされたユーザーか判断する
+  const token = req.headers.get("Authorization") ?? "";
+
+  // supabaseに対してtokenを送る
+  const { data, error } = await supabase.auth.getUser(token);
+
+  // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
+  if (error) {
+    return NextResponse.json({ error: "ユーザー認証に失敗しました" }, { status: 401 });
+  }
+
+  try {
+    const body: UpdateCheckListItemsStatusRequest = await req.json();
+    const { status, itemIds } = body;
+
+    if (error || !data.user) {
+      throw new Error("ユーザーは登録されていません。");
+    }
+
+    const supabaseUserId = data.user.id;
+
+    const userData = await prisma.user.findUnique({
+      where: { supabaseUserId },
+    });
+
+    if (!userData) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+
+    const updatedItems = await prisma.checkListItem.updateManyAndReturn({
+      where: {
+        id: { in: itemIds },
+        checkListId: parseInt(params.checkListId),
+        user: { supabaseUserId },
+      },
+      data: {
+        status,
+        completedAt: status === "Completed" ? new Date() : null,
+      },
+      include: {
+        category: true,
+      },
+    })
+
+    // updateManyAndReturnで下記は不要
+    // await prisma.checkListItem.updateMany({
+    //   where: {
+    //     id: { in: itemIds },
+    //     checkListId: parseInt(params.checkListId),
+    //     user: { supabaseUserId },
+    //   },
+    //   data: {
+    //     status,
+    //     completedAt: status === "Completed" ? new Date() : null,
+    //   },
+    // });
+
+    // // 更新されたアイテムを返す（オプション）
+    // const updatedItems = await prisma.checkListItem.findMany({
+    //   where: {
+    //     id: { in: itemIds },
+    //   },
+    //   include: {
+    //     category: true,
+    //   },
+    // });
+
+    return NextResponse.json(updatedItems, { status: 200 });
   } catch (error) {
     console.error("Error creating checklist item:", error);
     return NextResponse.json(

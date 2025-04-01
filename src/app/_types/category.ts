@@ -19,3 +19,10 @@ export type AddCategory = {
   id: number;
   name: string;
 }[];
+
+export type FeatchCategory = {
+  id: number;
+  name: string;
+  description: string;
+  displayOrder: number;
+}
