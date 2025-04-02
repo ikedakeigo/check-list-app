@@ -2,6 +2,7 @@
 
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
 import { GroupedItemsType } from "@/app/_types/checkListItems";
+import { handleChecklistStatusUpdate } from "@/app/utils/handleChecklistStatusUpdate";
 import { CheckListItem, CheckLists } from "@prisma/client";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -103,49 +104,6 @@ const ChecklistDetailPage = () => {
     });
   };
 
-  const handleChecklistStatusUpdate = async (
-    updatedItems: CheckListItem[],
-    checklist: Checklist | null,
-    setChecklist: (checklist: Checklist) => void,
-    token: string,
-    checklistId: number
-  ) => {
-    const allItemsCompleted = updatedItems.every((item) => item.status === "Completed");
-    const someItemsPending = updatedItems.some((item) => item.status === "Pending");
-
-    if (allItemsCompleted && checklist?.status !== "Completed") {
-      const res = await fetch(`/api/checklists/${checklistId}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: "Completed" }),
-      });
-
-      if (!res.ok) throw new Error("チェックリストのステータスの更新に失敗しました");
-
-      const updatedChecklist = await res.json();
-      setChecklist(updatedChecklist);
-      alert("全てのアイテムとチェックリストが完了しました");
-
-    } else if (someItemsPending && checklist?.status === "Completed") {
-      const res = await fetch(`/api/checklists/${checklistId}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: "Pending" }),
-      });
-
-      if (!res.ok) throw new Error("チェックリストのステータスの更新に失敗しました");
-
-      const updatedChecklist = await res.json();
-      setChecklist(updatedChecklist);
-    }
-  };
-
 
   // アイテムのステータスを更新
   const handleItemsStatusChange = async (itemId: number, newStatus: "Pending" | "Completed") => {
@@ -174,48 +132,14 @@ const ChecklistDetailPage = () => {
         item.id === itemId ? { ...item, status: newStatus } : item
       );
 
-      // 全てのアイテムが完了した場合、チェックリストのステータスを更新
-      const allItemsCompleted = updatedItems.every((item) => item.status === "Completed");
+      await handleChecklistStatusUpdate(
+        updatedItems,
+        checklist,
+        setChecklist,
+        token,
+        Number(id)
+      )
 
-      // チェックリストのステータスが「Completed」でない場合のみ更新
-      if (allItemsCompleted && checklist?.status !== "Completed") {
-        // チェックリストのステータスを更新
-        const checklistResult = await fetch(`/api/checklists/${id}`, {
-          method: "PATCH",
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status: "Completed" }),
-        });
-
-        if (!checklistResult.ok) throw new Error("チェックリストのステータスの更新に失敗しました");
-
-        // チェックリストのステータスを更新
-        const updatedChecklist = await checklistResult.json();
-
-        // ステータスを「Completed」に更新
-        setChecklist(updatedChecklist);
-        alert("全てのアイテムが完了しました");
-
-        // アイテムが未完了の場合、チェックリストのステータスを「進行中」に戻す
-      } else if (!allItemsCompleted && checklist?.status === "Completed") {
-
-        // チェックリストのステータスを「進行中」に戻す
-        const checklistResult = await fetch(`/api/checklists/${id}`, {
-          method: "PATCH",
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status: "Pending" }),
-        });
-
-        if (!checklistResult.ok) throw new Error("チェックリストのステータスの更新に失敗しました");
-
-        const updatedChecklist = await checklistResult.json();
-        setChecklist(updatedChecklist);
-      }
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -275,14 +199,22 @@ const ChecklistDetailPage = () => {
         }),
       });
 
-      if(!res.ok) throw new Error("全てのアイテムの完了に失敗しました");
+      if (!res.ok) throw new Error("全てのアイテムの完了に失敗しました");
 
       // アイテムのステータスを更新
       const updatedItems: CheckListItem[] = await res.json();
 
       // 各アイテムのステータスを更新
       updatedItems.forEach(updateItemStatusInState);
-      alert("全てのアイテムを完了にしました");
+
+      await handleChecklistStatusUpdate(
+        updatedItems,
+        checklist,
+        setChecklist,
+        token,
+        Number(id) // パラメータで取得したidを使用、数値型に変換
+      )
+
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
