@@ -84,13 +84,10 @@ const ChecklistDetailPage = () => {
     }
   }, [id, token]);
 
-
   // アイテムのステータス更新ロジック
   const updateItemStatusInState = (updatedItem: CheckListItem) => {
     // 全体アイテム更新
-    setItems((prev) =>
-      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
-    );
+    setItems((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
 
     // グループ化されたアイテムの更新
     setGroupedItems((prev) => {
@@ -178,7 +175,6 @@ const ChecklistDetailPage = () => {
 
   // 全てのアイテムのステータスを更新
   const handleCompleteAllItems = async () => {
-
     if (!confirm("全てのアイテムを完了にしますか？")) return;
 
     try {
