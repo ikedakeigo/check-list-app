@@ -116,61 +116,83 @@ export const PATCH = async (
         siteName,
         isTemplate,
         status,
-      }
-    })
+      },
+    });
 
-    return NextResponse.json(checkList, { status: 200 })
-
+    return NextResponse.json(checkList, { status: 200 });
   } catch (error) {
-    console.error('Error', error)
-    return NextResponse.json(
-      { error: 'Error updating checklist' },
-      { status: 500 }
-    )
+    console.error("Error", error);
+    return NextResponse.json({ error: "Error updating checklist" }, { status: 500 });
   }
-}
-
+};
 
 // チェックリストの削除
-export const DELETE = async (
-  req: NextRequest,
-  { params }: { params: { checkListId: string } }
-) => {
-
+export const DELETE = async (req: NextRequest, { params }: { params: { checkListId: string } }) => {
   // フロントエンドから送られてきたtokenより
   // ログインされたユーザーか判断する
-  const token = req.headers.get('Authorization') ?? ''
+  const token = req.headers.get("Authorization") ?? "";
   // supabaseに対してtokenを送る
-  const { error, data } = await supabase.auth.getUser(token)
+  const { error, data } = await supabase.auth.getUser(token);
 
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
-  if( error ) {
-    return NextResponse.json(
-      { status: error.message},
-      { status: 400 }
-    )
+  if (error) {
+    return NextResponse.json({ status: error.message }, { status: 400 });
   }
 
-  if( error || !data.user) {
-    throw new Error('ユーザーは登録されていません。')
+  if (error || !data.user) {
+    throw new Error("ユーザーは登録されていません。");
   }
 
-  const supabaseUserId = data.user.id
+  const supabaseUserId = data.user.id;
 
   try {
+
+    // これだと親をテーブルのみ削除しようとしてしまうので
+    // まずは子テーブルのアイテムを削除してから親を削除する
+    // チェックリストに紐づくアイテムを削除
+    // await prisma.checkLists.delete({
+    //   where: {
+    //     id: parseInt(params.checkListId),
+    //     user: { supabaseUserId }
+    //   }
+    // })
+
+    // チェックリストが存在するか確認
+    // まずはチェックリストが存在するか確認
+    const checklist = await prisma.checkLists.findFirst({
+      where: {
+        id: parseInt(params.checkListId),
+        user: { supabaseUserId },
+      },
+    });
+
+    // チェックリストが存在しない場合、エラーを返す
+    if (!checklist) {
+      return NextResponse.json(
+        { error: "チェックリストが見つからないか、アクセス権限がありません" },
+        { status: 404 }
+      );
+    }
+
+    // 親テーブルの存在を確認したので
+    // 先に紐付くアイテムを削除する
+    await prisma.checkListItem.deleteMany({
+      where: {
+        checkListId: parseInt(params.checkListId),
+      },
+    });
+
+    // アイテムが削除できれば
+    // チェックリストを削除する
     await prisma.checkLists.delete({
       where: {
         id: parseInt(params.checkListId),
-        user: { supabaseUserId }
-      }
-    })
+      },
+    });
 
-    return NextResponse.json(null)
+    return NextResponse.json(null);
   } catch (error) {
-    console.error('Error', error)
-    return NextResponse.json(
-      { error: 'Error deleting checklist' },
-      { status: 500 }
-    )
+    console.error("Error", error);
+    return NextResponse.json({ error: "Error deleting checklist" }, { status: 500 });
   }
-}
+};
