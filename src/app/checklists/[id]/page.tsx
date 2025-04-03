@@ -128,7 +128,6 @@ const ChecklistDetailPage = () => {
     });
   };
 
-
   // アイテムのステータスを更新
   const handleItemsStatusChange = async (itemId: number, newStatus: "Pending" | "Completed") => {
     try {
@@ -156,14 +155,7 @@ const ChecklistDetailPage = () => {
         item.id === itemId ? { ...item, status: newStatus } : item
       );
 
-      await handleChecklistStatusUpdate(
-        updatedItems,
-        checklist,
-        setChecklist,
-        token,
-        Number(id)
-      )
-
+      await handleChecklistStatusUpdate(updatedItems, checklist, setChecklist, token, Number(id));
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -236,8 +228,7 @@ const ChecklistDetailPage = () => {
         setChecklist,
         token,
         Number(id) // パラメータで取得したidを使用、数値型に変換
-      )
-
+      );
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
