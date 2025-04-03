@@ -84,6 +84,33 @@ const ChecklistDetailPage = () => {
     }
   }, [id, token]);
 
+  // チェックリストを削除する
+  const handleDeleteChecklist = async () => {
+    if (!confirm("このチェックリストを削除しますか？この操作は元に戻せません。")) return;
+
+    try {
+      if (!token) return;
+
+      const res = await fetch(`/api/checklists/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: token,
+        },
+      });
+
+      if (!res.ok) throw new Error("チェックリストの削除に失敗しました");
+
+      alert("チェックリストを削除しました");
+      router.push("/checklists");
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("チェックリストの削除に失敗しました");
+      }
+    }
+  };
+
   // アイテムのステータス更新ロジック
   const updateItemStatusInState = (updatedItem: CheckListItem) => {
     // 全体アイテム更新
