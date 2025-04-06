@@ -179,3 +179,14 @@ export const PATCH = async (req: NextRequest, { params }: { params: { checkListI
     );
   }
 };
+
+// チェックリストアイテムの削除
+export const DELETE = async (req: NextRequest, { params }: { params: { checkListId: string } }) => {
+  await prisma.checkListItem.deleteMany({
+    where: { checkListId: parseInt(params.checkListId) }, 
+  });
+
+  return new Response(JSON.stringify({ message: "チェックリストアイテムを削除しました" }), {
+    status: 200,
+  });
+};
