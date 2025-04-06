@@ -15,6 +15,6 @@ export type ChecklistFormData = {
   name: string;
   description?: string;
   siteName: string;
-  workDate: Date;
+  workDate: string;
   isTemplate: boolean;
 }
