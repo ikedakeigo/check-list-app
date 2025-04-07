@@ -1,5 +1,5 @@
+import { CheckLists } from "@prisma/client";
 import { ChecklistStatus } from "./checkListItems";
-
 export type CheckListRequestBody = {
   name: string;
   description?: string;
@@ -17,4 +17,10 @@ export type ChecklistFormData = {
   siteName: string;
   workDate: string;
   isTemplate: boolean;
+}
+
+// 拡張したチェックリスト型
+export interface CheckListWithItems extends CheckLists {
+  totalItems: number;
+  completedItems: number;
 }
