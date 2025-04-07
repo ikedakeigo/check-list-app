@@ -1,41 +1,44 @@
-import { CategoryRequestBody } from "@/app/_types/category";
-import { CheckListItem } from "@prisma/client";
-import Link from "next/link";
+import { AddCategory } from "@/app/_types/category";
+import { CheckLists } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import BackIcon from "../icons/BackIcon";
 import TrashIcon from "../icons/TrashIcon";
 import PlusIcon from "../icons/PlusIcon";
 import { ChecklistFormData } from "@/app/_types/checklists";
+import { NewItem } from "@/app/_types/checkListItems";
 
 type Props = {
   formData: ChecklistFormData;
-  setFormData: React.Dispatch<React.SetStateAction<ChecklistFormData>>;
   formErrors: { [key: string]: string };
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  handleAddItem: () => void;
-  handleRemoveItem: (index: number) => void;
-  newItem: CheckListItem;
-  handleNewItemChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  categories: AddCategory;
   selectedCategoryId: number | null;
   setSelectedCategoryId: (id: number) => void;
-  items: CheckListItem[];
-  categories: CategoryRequestBody[];
+  items: NewItem[]; 
+  newItem: NewItem;
+  handleNewChecklistChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => void;
+  handleNewItemChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleAddItem: () => void;
+  handleRemoveItem: (index: number) => void;
   handleSubmit: (e: React.FormEvent) => void;
-  isEdit?: boolean;
-  onDelete?: () => void;
-  handleArchiveChecklist: any;
-  handleDeleteChecklist: any;
   loading: boolean;
-  error: any;
+  error: string | null;
   success: string | null;
-  handleNewChecklistChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+
+  // オプショナルなプロパティ
+  isEdit?: boolean;
+  checklist?: CheckLists | null;
+  id?: string | number;
+  setFormData?: React.Dispatch<React.SetStateAction<ChecklistFormData>>;
+  handleArchiveChecklist?: () => void;
+  handleDeleteChecklist?: () => void;
 };
 
 export default function ChecklistForm({
   formData,
   setFormData,
   formErrors,
-  handleChange,
   handleAddItem,
   handleRemoveItem,
   newItem,
@@ -46,7 +49,6 @@ export default function ChecklistForm({
   categories,
   handleSubmit,
   isEdit,
-  onDelete,
   handleArchiveChecklist,
   handleDeleteChecklist,
   loading,
@@ -54,12 +56,15 @@ export default function ChecklistForm({
   success,
   handleNewChecklistChange,
 }: Props) {
+
   const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
-      {isEdit && onDelete ? (
+      {/* isEditがtrueの場合は編集画面、falseの場合は新規作成画面 */}
+      {/* 画面遷移のためにrouter.pushを使用 */}
+      {isEdit ? (
         <header className="bg-blue-600 text-white p-4">
           <div className="flex justify-between items-center">
             <button onClick={() => router.push("/checklists")} className="text-white">
@@ -72,49 +77,52 @@ export default function ChecklistForm({
                 />
               </svg>
             </button>
-            <h1 className="text-xl font-bold">チェックリスト詳細</h1>
+            <h1 className="text-xl font-bold">チェックリスト編集</h1>
             <div className="flex space-x-2">
-              <Link
-                href={`/checklists/${id}/edit`}
-                className="p-2 bg-white bg-opacity-20 rounded-lg"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-              </Link>
               <button
-                onClick={handleArchiveChecklist}
-                className="p-2 bg-white bg-opacity-20 rounded-lg"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="px-4 py-2 bg-white bg-opacity-20 rounded-lg text-sm disabled:opacity-50"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-                  />
-                </svg>
+                {loading ? "保存中..." : "保存"}
               </button>
+              {handleArchiveChecklist && (
+                <button
+                  onClick={handleArchiveChecklist}
+                  className="p-2 bg-white bg-opacity-20 rounded-lg"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                    />
+                  </svg>
+                </button>
+              )}
 
-              <button
-                onClick={handleDeleteChecklist}
-                className="flex items-center p-2 bg-red-500 bg-opacity-90 rounded-lg"
-              >
-                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                <span className="hidden sm:inline">削除</span>
-              </button>
+              {handleDeleteChecklist && (
+                <button
+                  onClick={handleDeleteChecklist}
+                  className="flex items-center p-2 bg-red-500 bg-opacity-90 rounded-lg"
+                >
+                  <svg
+                    className="w-5 h-5 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  <span className="hidden sm:inline">削除</span>
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -250,9 +258,14 @@ export default function ChecklistForm({
                     name="isTemplate"
                     type="checkbox"
                     checked={formData.isTemplate}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, isTemplate: e.target.checked }))
-                    }
+                    onChange={(e) => {
+                      if (setFormData) {
+                        setFormData((prev) => ({ ...prev, isTemplate: e.target.checked }));
+                      } else {
+                        // setFormDataが提供されていない場合は通常のonChangeハンドラーを使用
+                        handleNewChecklistChange(e);
+                      }
+                    }}
                     className="h-4 w-4 text-blue-600 rounded"
                   />
                   <label htmlFor="isTemplate" className="ml-2 text-sm text-gray-700">
