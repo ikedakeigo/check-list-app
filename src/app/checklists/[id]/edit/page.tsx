@@ -220,95 +220,143 @@ const NewChecklistPage = () => {
 
     let hasError = false;
 
+    // 入力チェック
+    if (!formData.name.trim()) {
+      errors.name = "チェックリスト名を入力してください";
+      hasError = true;
+    }
+
+    if (!formData.workDate) {
+      errors.workDate = "作業日を入力してください";
+      hasError = true;
+    }
+
+    if (!formData.siteName.trim()) {
+      errors.siteName = "現場名を入力してください";
+      hasError = true;
+    }
+
+    if (hasError) {
+      setFormErrors(errors);
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 入力チェック
-      if (!formData.name.trim()) {
-        errors.name = "チェックリスト名を入力してください";
-        hasError = true;
+      if (id) {
+        // 編集の場合
+        await fetch(`/api/checklists/${id}/items`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token || "",
+          },
+        });
+
+        const checklistResponse = await fetch(`/api/checklists/${id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token || "",
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            description: formData.description,
+            workDate: formData.workDate,
+            siteName: formData.siteName,
+            isTemplate: formData.isTemplate,
+          }),
+        });
+
+        if (!checklistResponse.ok) {
+          const errorData = await checklistResponse.json();
+          throw new Error(errorData.error || "チェックリストの更新に失敗しました");
+        }
+
+        // アイテム追加処理
+        await Promise.all(
+          items.map(async (item) => {
+            await fetch(`/api/checklists/${id}/items`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: token || "",
+              },
+              body: JSON.stringify({
+                name: item.name,
+                quantity: item.quantity ? parseInt(item.quantity) : null,
+                unit: item.unit,
+                categoryId: item.categoryId,
+                status: "NotStarted",
+              }),
+            });
+          })
+        );
+
+        setSuccess("チェックリストを更新しました");
+      } else {
+        // 新規作成の場合
+        const checklistResponse = await fetch("/api/checklists", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token || "",
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            description: formData.description,
+            workDate: formData.workDate,
+            siteName: formData.siteName,
+            isTemplate: formData.isTemplate,
+            status: "NotStarted",
+          }),
+        });
+
+        if (!checklistResponse.ok) {
+          const errorData = await checklistResponse.json();
+          throw new Error(errorData.error || "チェックリストの作成に失敗しました");
+        }
+
+        // 作成したチェックリストのIDを取得
+        const checklistData = await checklistResponse.json();
+
+        const checklistId = checklistData.id;
+
+        // アイテム追加処理
+        await Promise.all(
+          items.map(async (item) => {
+            const res = await fetch(`/api/checklists/${checklistId}/items`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: token || "",
+              },
+              body: JSON.stringify({
+                name: item.name,
+                quantity: item.quantity ? parseInt(item.quantity) : null,
+                unit: item.unit,
+                categoryId: item.categoryId,
+                status: "NotStarted",
+              }),
+            });
+
+            if (!res.ok) {
+              const errorData = await res.json();
+              throw new Error(errorData.error || "アイテムの追加に失敗しました");
+            }
+          })
+        );
+
+        setSuccess("チェックリストを作成しました");
       }
 
-      if (!formData.workDate) {
-        errors.workDate = "作業日を入力してください";
-        hasError = true;
-      }
-
-      if (!formData.siteName.trim()) {
-        errors.siteName = "現場名を入力してください";
-        hasError = true;
-      }
-
-      if (items.length === 0) {
-        setError("アイテムを1つ以上追加してください");
-        hasError = true;
-      }
-
-      if (hasError) {
-        setFormErrors(errors);
-        setLoading(false);
-        return;
-      }
-
-      // チェックリストを作成するAPIを呼び出し
-      const checklistResponse = await fetch("/api/checklists", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token || "",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          workDate: formData.workDate,
-          siteName: formData.siteName,
-          isTemplate: formData.isTemplate,
-          status: "Pending", // 初期ステータスは未完了
-        }),
-      });
-
-      if (!checklistResponse.ok) {
-        const errorData = await checklistResponse.json();
-        throw new Error(errorData.error || "チェックリストの作成に失敗しました");
-      }
-
-      // 作成したチェックリストのIDを取得
-      const checklistData = await checklistResponse.json();
-      const checklistId = checklistData.id;
-
-      await Promise.all(
-        items.map(async (item) => {
-          const res = await fetch(`/api/checklists/${checklistId}/items`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: token || "",
-            },
-            // bodyはJSON形式でサーバーに送信したいデータを指定（リクエストボディ）
-            body: JSON.stringify({
-              name: item.name,
-              quantity: item.quantity ? parseInt(item.quantity) : null,
-              unit: item.unit,
-              categoryId: item.categoryId,
-              status: "Pending",
-            }),
-          });
-
-          if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.error || "アイテムの追加に失敗しました");
-          }
-        })
-      );
-
-      // 成功メッセージを表示
-      setSuccess("チェックリストを作成しました");
-
-      // 一覧ページに戻る【少し遅延させて成功メッセージを見せる】
+      // 一覧ページに戻る
       setTimeout(() => {
         router.push("/checklists");
       }, 1500);
     } catch (error) {
-      console.error("Error creating checklist:", error);
-      setError("チェックリストの作成に失敗しました");
+      console.error("Error:", error);
+      setError(id ? "チェックリストの更新に失敗しました" : "チェックリストの作成に失敗しました");
     } finally {
       setLoading(false);
     }
