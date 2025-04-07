@@ -77,9 +77,8 @@ const NewChecklistPage = () => {
   }, [token]);
 
   useEffect(() => {
-    if (useAuth) {
-      setUser(useAuth);
-    }
+    if (!useAuth || !token) return; // ← tokenが無いなら実行しない
+    setUser(useAuth);
     setLoading(true);
     fetchCategories();
   }, [useAuth, fetchCategories]);
