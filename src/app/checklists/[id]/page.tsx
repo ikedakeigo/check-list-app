@@ -275,6 +275,26 @@ const ChecklistDetailPage = () => {
   const totalItems = items.length;
   const progressPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
+  const getStatusColor = (status: string | undefined) => {
+    switch (status) {
+      case "Completed":
+        return {
+          style: "bg-green-100 text-green-800",
+          label: "完了",
+        };
+      case "Pending":
+        return {
+          style: "bg-blue-100 text-blue-800",
+          label: "進行中",
+        };
+      default:
+        return {
+          style: "bg-gray-100 text-gray-800",
+          label: "未着手",
+        };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
@@ -359,13 +379,9 @@ const ChecklistDetailPage = () => {
               <div>
                 <span className="text-gray-500">ステータス: </span>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs ${
-                    checklist?.status === "Completed"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-blue-100 text-blue-800"
-                  }`}
+                  className={`px-2 py-1 rounded-full text-xs ${getStatusColor(checklist?.status)}`}
                 >
-                  {checklist?.status === "Completed" ? "完了" : "進行中"}
+                  {getStatusColor(checklist?.status).label}
                 </span>
               </div>
               <div>
@@ -422,7 +438,6 @@ const ChecklistDetailPage = () => {
                           }`}
                         >
                           {item.name}
-                          {item.id}
                         </h4>
                         {item.quantity && item.unit && (
                           <span className="text-sm text-gray-500">
