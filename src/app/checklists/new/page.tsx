@@ -44,6 +44,8 @@ const NewChecklistPage = () => {
     name: "",
     quantity: "",
     unit: "",
+    categoryId: null,
+    categoryName: "",
   });
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -137,6 +139,8 @@ const NewChecklistPage = () => {
       name: "",
       quantity: "",
       unit: "",
+      categoryId: null,
+      categoryName: "",
     });
 
     setError(null);
