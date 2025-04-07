@@ -175,11 +175,6 @@ const NewChecklistPage = () => {
         hasError = true;
       }
 
-      if (items.length === 0) {
-        setError("アイテムを1つ以上追加してください");
-        hasError = true;
-      }
-
       if (hasError) {
         setFormErrors(errors);
         setLoading(false);
