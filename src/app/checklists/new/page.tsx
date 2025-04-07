@@ -194,7 +194,7 @@ const NewChecklistPage = () => {
           workDate: formData.workDate,
           siteName: formData.siteName,
           isTemplate: formData.isTemplate,
-          status: "Pending", // 初期ステータスは未完了
+          status: "NotStarted", // 初期ステータスは未完了
         }),
       });
 
@@ -221,7 +221,7 @@ const NewChecklistPage = () => {
               quantity: item.quantity ? parseInt(item.quantity) : null,
               unit: item.unit,
               categoryId: item.categoryId,
-              status: "Pending",
+              status: "NotStarted", // 初期ステータスは未完了
             }),
           });
 
