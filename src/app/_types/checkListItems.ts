@@ -1,6 +1,7 @@
 import { CheckListItem } from "@prisma/client";
 
 export enum ChecklistStatus {
+  NotStarted = "NotStarted",
   Pending = "Pending",
   Completed = "Completed",
 }
