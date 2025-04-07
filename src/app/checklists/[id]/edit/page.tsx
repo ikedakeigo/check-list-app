@@ -88,10 +88,10 @@ const NewChecklistPage = () => {
 
       if (!itemsRes.ok) throw new Error("アイテムの取得に失敗しました");
 
-      const itemsData = await itemsRes.json();
+      const itemsData: ItemsRes = await itemsRes.json();
 
       // アイテムをセット
-      const formattedItems = itemsData.map((item: any) => ({
+      const formattedItems = itemsData.map((item) => ({
         id: item.id,
         name: item.name,
         quantity: item.quantity ? item.quantity.toString() : "",
