@@ -384,7 +384,7 @@ const NewChecklistPage = () => {
       error={error}
       success={success}
       isEdit={true}
-      id={id} // idを渡す
+      id={id as string} // idを渡す
     />
   );
 };
