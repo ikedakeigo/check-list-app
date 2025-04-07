@@ -4,6 +4,7 @@ import useAuthCheck from "@/app/_hooks/useAuthCheck";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
 import { AddCategory, CategoryRequestBody } from "@/app/_types/category";
 import { NewItem } from "@/app/_types/checkListItems";
+import { ChecklistFormData } from "@/app/_types/checklists";
 import ChecklistForm from "@/components/form/ChecklistForm";
 import { User } from "@supabase/supabase-js";
 import { useParams, useRouter } from "next/navigation";
@@ -18,7 +19,7 @@ const NewChecklistPage = () => {
   const { token } = useSupabaseSession();
   const [, setUser] = useState<User | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ChecklistFormData>({
     name: "",
     description: "",
     siteName: "",
@@ -288,6 +289,7 @@ const NewChecklistPage = () => {
   return (
     <ChecklistForm
       formData={formData}
+      setFormData={setFormData} // setFormDataを渡す
       formErrors={formErrors}
       categories={categories}
       selectedCategoryId={selectedCategoryId}
