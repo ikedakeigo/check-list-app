@@ -2,8 +2,8 @@
 
 import useAuthCheck from "@/app/_hooks/useAuthCheck";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
-import { AddCategory, CategoryRequestBody } from "@/app/_types/category";
-import { NewItem } from "@/app/_types/checkListItems";
+import { AddCategory } from "@/app/_types/category";
+import { ItemsRes, NewItem } from "@/app/_types/checkListItems";
 import { ChecklistFormData } from "@/app/_types/checklists";
 import ChecklistForm from "@/components/form/ChecklistForm";
 import { User } from "@supabase/supabase-js";
@@ -47,6 +47,8 @@ const NewChecklistPage = () => {
     name: "",
     quantity: "",
     unit: "",
+    categoryId: null,
+    categoryName: "",
   });
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -198,6 +200,8 @@ const NewChecklistPage = () => {
       name: "",
       quantity: "",
       unit: "",
+      categoryId: null,
+      categoryName: "",
     });
 
     setError(null);
