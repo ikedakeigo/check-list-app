@@ -64,58 +64,86 @@ const NewChecklistPage = () => {
           Authorization: token,
         },
       });
+      if (!res.ok) throw new Error("チェックリストの取得に失敗しました");
+
       const data = await res.json();
-      console.log("data--------------", data);
-      setFormData(data); // ← 初期値としてセット
-      // setItems(data.items); // アイテムをセット
-      // setSelectedCategoryId(data.items[0].categoryId); // 最初のアイテムのカテゴリーIDをセット
-      // setCategories(data.items.map((item: any) => item.category)); // アイテムからカテゴリーをセット
-      setFormErrors({}); // エラーメッセージをクリア
+
+      setFormData({
+        name: data.name || "",
+        description: data.description || "",
+        siteName: data.siteName || "",
+        workDate: data.workDate ? new Date(data.workDate).toISOString().split("T")[0] : "",
+        isTemplate: data.isTemplate || false,
+      });
+
+      // アイテムを取得
+      const itemsRes = await fetch(`/api/checklists/${id}/items`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+      });
+
+
+      if (!itemsRes.ok) throw new Error("アイテムの取得に失敗しました");
+
+      const itemsData = await itemsRes.json();
+
+      // アイテムをセット
+      const formattedItems = itemsData.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity ? item.quantity.toString() : "",
+        unit: item.unit || "",
+        categoryId: item.categoryId,
+        categoryName: item.category.name,
+        status: item.status,
+      }));
+
+      setItems(formattedItems);
+      setSelectedCategoryId(formattedItems[0]?.categoryId || null); // 最初のアイテムのカテゴリーIDを選択
     } catch (error) {
       console.error("エラーが発生しました", error);
       setError("カテゴリーの取得に失敗しました");
     } finally {
       setLoading(false);
     }
+  }, [token, id]);
 
-    // const res = await fetch(`/api/checklists/${id}`);
-    // const data = await res.json();
-    // setForm(data); // ← 初期値としてセット
-  }, [id]);
+  // カテゴリーを取得する関数
+  const fetchCategories = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch("/api/categories", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+      });
 
-  // カテゴリー一覧を取得
-  // const fetchCategories = useCallback(async () => {
-  //   if (!token) return;
+      if (!res.ok) throw new Error("カテゴリーの取得に失敗しました");
 
-  //   try {
-  //     const res = await fetch("/api/categories", {
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: token,
-  //       },
-  //     });
-  //     const data: CategoryRequestBody = await res.json();
+      const data = await res.json();
+      setCategories(data);
 
-  //     if (!res.ok) throw new Error("エラーが発生しました");
-
-  //     setCategories(data);
-  //     if (data.length > 0) setSelectedCategoryId(data[0].id);
-  //   } catch (error) {
-  //     console.error("エラーが発生しました", error);
-  //     setError("カテゴリーの取得に失敗しました");
-  //   } finally {
-  //     // データの取得が完了したらローディング終了
-  //     setLoading(false);
-  //   }
-  // }, [token]);
+      if (data.length > 0 && !selectedCategoryId) {
+        setSelectedCategoryId(data[0].id); // 最初のカテゴリーを選択
+      }
+    } catch (error) {
+      console.error("エラーが発生しました", error);
+      setError("カテゴリーの取得に失敗しました");
+    }
+  }, [token, selectedCategoryId]);
 
   useEffect(() => {
-    if (useAuth) {
-      setUser(useAuth);
-    }
-    setLoading(true);
+    // tokenがない場合は何もしない
+    if (!useAuth || !token) return;
+    setUser(useAuth);
     fetchChecklist();
-  }, [useAuth, fetchChecklist, token]);
+    fetchCategories();
+
+    setLoading(true);
+  }, [useAuth, token]);
 
   // チェックリストフォーム入力の変更を処理する関数
   /**
