@@ -1,4 +1,7 @@
-import { CheckListItemsRequestBody, UpdateCheckListItemsStatusRequest } from "@/app/_types/checkListItems";
+import {
+  CheckListItemsRequestBody,
+  UpdateCheckListItemsStatusRequest,
+} from "@/app/_types/checkListItems";
 import { supabase } from "@/lib/supabase";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -98,7 +101,6 @@ export const POST = async (req: NextRequest, { params }: { params: { checkListId
   }
 };
 
-
 // チェックリストアイテムのステータス一括更新
 export const PATCH = async (req: NextRequest, { params }: { params: { checkListId: string } }) => {
   // フロントエンドから送られてきたtokenより
@@ -131,7 +133,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: { checkListI
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-
     const updatedItems = await prisma.checkListItem.updateManyAndReturn({
       where: {
         id: { in: itemIds },
@@ -145,7 +146,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: { checkListI
       include: {
         category: true,
       },
-    })
+    });
 
     // updateManyAndReturnで下記は不要
     // await prisma.checkListItem.updateMany({
@@ -182,11 +183,39 @@ export const PATCH = async (req: NextRequest, { params }: { params: { checkListI
 
 // チェックリストアイテムの削除
 export const DELETE = async (req: NextRequest, { params }: { params: { checkListId: string } }) => {
-  await prisma.checkListItem.deleteMany({
-    where: { checkListId: parseInt(params.checkListId) }, 
-  });
+  const token = req.headers.get("Authorization") ?? "";
 
-  return new Response(JSON.stringify({ message: "チェックリストアイテムを削除しました" }), {
-    status: 200,
-  });
+  // supabaseに対してtokenを送る
+  const { data, error } = await supabase.auth.getUser(token);
+
+  // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
+  if (error) {
+    return NextResponse.json({ error: "ユーザー認証に失敗しました" }, { status: 401 });
+  }
+
+  try {
+    if (error || !data.user) {
+      throw new Error("ユーザーは登録されていません。");
+    }
+
+    // supabaseUserIdを取得
+    const supabaseUserId = data.user.id;
+
+    await prisma.checkListItem.deleteMany({
+      where: {
+        checkListId: parseInt(params.checkListId),
+        user: { supabaseUserId },
+      },
+    });
+
+    return new Response(JSON.stringify({ message: "チェックリストアイテムを削除しました" }), {
+      status: 200,
+    });
+  } catch (error) {
+    console.error("Error deleting checklist item:", error);
+    return NextResponse.json(
+      { error: "チェックリストアイテムの削除に失敗しました" },
+      { status: 500 }
+    );
+  }
 };
