@@ -5,7 +5,6 @@ import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
 import { AddCategory, CategoryRequestBody } from "@/app/_types/category";
 import { NewItem } from "@/app/_types/checkListItems";
 import ChecklistForm from "@/components/form/ChecklistForm";
-import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
 
@@ -14,7 +13,6 @@ const NewChecklistPage = () => {
   const useAuth = useAuthCheck();
 
   const { token } = useSupabaseSession();
-  const [, setUser] = useState<User | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -80,7 +78,6 @@ const NewChecklistPage = () => {
 
   useEffect(() => {
     if (!useAuth || !token) return; // ← tokenが無いなら実行しない
-    setUser(useAuth);
     setLoading(true);
     fetchCategories();
   }, [useAuth, fetchCategories]);

@@ -6,7 +6,6 @@ import { AddCategory } from "@/app/_types/category";
 import { ItemsRes, NewItem } from "@/app/_types/checkListItems";
 import { ChecklistFormData } from "@/app/_types/checklists";
 import ChecklistForm from "@/components/form/ChecklistForm";
-import { User } from "@supabase/supabase-js";
 import { useParams, useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
 
@@ -17,7 +16,9 @@ const NewChecklistPage = () => {
   const { id } = useParams();
 
   const { token } = useSupabaseSession();
-  const [, setUser] = useState<User | null>(null);
+
+  // todo 更新関数のみを使用している現状だったので、完全に不要なので削除
+  // const [, setUser] = useState<User | null>(null);
 
   const [formData, setFormData] = useState<ChecklistFormData>({
     name: "",
@@ -139,7 +140,6 @@ const NewChecklistPage = () => {
   useEffect(() => {
     // tokenがない場合は何もしない
     if (!useAuth || !token) return;
-    setUser(useAuth);
     fetchChecklist();
     fetchCategories();
 
