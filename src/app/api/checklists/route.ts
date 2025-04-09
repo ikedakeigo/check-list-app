@@ -91,7 +91,7 @@ export const POST = async (req: NextRequest) => {
 
   try {
     const body: CheckListRequestBody = await req.json();
-    const { name, description, workDate, siteName, isTemplate } = body;
+    const { name, description, workDate, siteName, isTemplate, status } = body;
 
     const { data, error } = await supabase.auth.getUser(token);
 
@@ -111,7 +111,7 @@ export const POST = async (req: NextRequest) => {
         user: {
           connect: { supabaseUserId },
         }, //supabaseUserId を持つUserを参照してuserIdを設定,
-        status: "Pending", // デフォルト値だが明示的に指定
+        status // デフォルト値だが明示的に指定
       },
     });
 
