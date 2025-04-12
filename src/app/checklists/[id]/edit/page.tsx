@@ -148,9 +148,6 @@ const NewChecklistPage = () => {
   }, [useAuth, token]);
 
   // チェックリストフォーム入力の変更を処理する関数
-  /**
-   * イベントからname,value,typeを取得し、
-   */
   const handleNewChecklistChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
