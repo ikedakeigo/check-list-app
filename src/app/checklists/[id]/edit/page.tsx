@@ -60,36 +60,37 @@ const NewChecklistPage = () => {
     if (!token) return;
     // チェックリストの詳細を取得
     try {
-      const res = await fetch(`/api/checklists/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-      });
-      if (!res.ok) throw new Error("チェックリストの取得に失敗しました");
+      const [checkListRes, itemsRes] = await Promise.all([
+        fetch(`/api/checklists/${id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token,
+          },
+        }),
+        fetch(`/api/checklists/${id}/items`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token,
+          },
+        })
+      ]);
 
-      const data = await res.json();
-
-      setFormData({
-        name: data.name || "",
-        description: data.description || "",
-        siteName: data.siteName || "",
-        workDate: data.workDate ? new Date(data.workDate).toISOString().split("T")[0] : "",
-        isTemplate: data.isTemplate || false,
-      });
-
-      // アイテムを取得
-      const itemsRes = await fetch(`/api/checklists/${id}/items`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-      });
-
-
+      if (!checkListRes.ok) throw new Error("チェックリストの取得に失敗しました");
       if (!itemsRes.ok) throw new Error("アイテムの取得に失敗しました");
 
-      const itemsData: ItemsRes = await itemsRes.json();
+
+      const [checkListData, itemsData]:[ChecklistFormData, ItemsRes] = await Promise.all([
+        checkListRes.json(),
+        itemsRes.json()
+      ]);
+
+      setFormData({
+        name: checkListData.name || "",
+        description: checkListData.description || "",
+        siteName: checkListData.siteName || "",
+        workDate: checkListData.workDate ? new Date(checkListData.workDate).toISOString().split("T")[0] : "",
+        isTemplate: checkListData.isTemplate || false,
+      });
 
       // アイテムをセット
       const formattedItems = itemsData.map((item) => ({
