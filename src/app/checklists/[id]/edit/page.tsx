@@ -40,8 +40,17 @@ const NewChecklistPage = () => {
   // 選択中のカテゴリーID
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
+  // アイテムの初期値を関数で定義
+  const initialNewItem = {
+    name: "",
+    quantity: "",
+    unit: "",
+    categoryId: null,
+    categoryName: "",
+  };
+
   // アイテム管理の状態
-  const [items, setItems] = useState<NewItem[]>([]);
+  const [items, setItems] = useState<NewItem[]>([initialNewItem]);
 
   // 新しいアイテムの入力状態
   const [newItem, setNewItem] = useState({
@@ -141,10 +150,10 @@ const NewChecklistPage = () => {
   useEffect(() => {
     // tokenがない場合は何もしない
     if (!useAuth || !token) return;
+    setLoading(true);
+
     fetchChecklist();
     fetchCategories();
-
-    setLoading(true);
   }, [useAuth, token]);
 
   // チェックリストフォーム入力の変更を処理する関数
@@ -194,13 +203,7 @@ const NewChecklistPage = () => {
     setItems((prev) => [...prev, item]);
 
     // 入力値をクリア
-    setNewItem({
-      name: "",
-      quantity: "",
-      unit: "",
-      categoryId: null,
-      categoryName: "",
-    });
+    setNewItem(initialNewItem);
 
     setError(null);
   };
