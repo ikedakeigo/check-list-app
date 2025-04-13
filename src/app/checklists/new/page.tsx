@@ -35,7 +35,7 @@ const NewChecklistPage = () => {
   const [items, setItems] = useState<NewItem[]>([]);
 
   // 新しいアイテムの入力状態
-  const [newItem, setNewItem] = useState({
+  const [newItem, setNewItem] = useState<NewItem>({
     name: "",
     quantity: "",
     unit: "",
