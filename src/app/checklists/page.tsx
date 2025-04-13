@@ -144,7 +144,7 @@ const ChecklistsPage = () => {
                 onClick={() => handleViewChecklist(checklist.id)}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-lg">{checklist.name}</h3>
+                  <h3 className="font-medium text-lg text-gray-900">{checklist.name}</h3>
                   <span
                     className={`px-2 py-1 rounded-full text-xs ${
                       checklist.status === "Completed"
