@@ -264,13 +264,15 @@ const NewChecklistPage = () => {
             Authorization: token || "",
           },
           body: JSON.stringify({
-            name: formData.name,
-            description: formData.description,
-            workDate: formData.workDate,
-            siteName: formData.siteName,
-            isTemplate: formData.isTemplate,
+            name: data.name,
+            description: data.description,
+            workDate: data.workDate,
+            siteName: data.siteName,
+            isTemplate: data.isTemplate,
           }),
         });
+
+        console.log("チェックリストの更新レスポンス", checklistResponse);
 
         if (!checklistResponse.ok) {
           const errorData = await checklistResponse.json();
@@ -307,11 +309,11 @@ const NewChecklistPage = () => {
             Authorization: token || "",
           },
           body: JSON.stringify({
-            name: formData.name,
-            description: formData.description,
-            workDate: formData.workDate,
-            siteName: formData.siteName,
-            isTemplate: formData.isTemplate,
+            name: data.name,
+            description: data.description,
+            workDate: data.workDate,
+            siteName: data.siteName,
+            isTemplate: data.isTemplate,
             status: "NotStarted",
           }),
         });
