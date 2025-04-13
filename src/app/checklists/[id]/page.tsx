@@ -369,17 +369,21 @@ const ChecklistDetailPage = () => {
               <div>
                 <span className="text-gray-500">日付: </span>
                 {checklist?.workDate && (
-                  <span>{new Date(checklist.workDate).toLocaleDateString()}</span>
+                  <span className="text-gray-900">
+                    {new Date(checklist.workDate).toLocaleDateString()}
+                  </span>
                 )}
               </div>
               <div>
                 <span className="text-gray-500">現場名: </span>
-                <span>{checklist?.siteName}</span>
+                <span className="text-gray-900">{checklist?.siteName}</span>
               </div>
               <div>
                 <span className="text-gray-500">ステータス: </span>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs ${getStatusColor(checklist?.status)}`}
+                  className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
+                    checklist?.status
+                  ).style}`}
                 >
                   {getStatusColor(checklist?.status).label}
                 </span>
@@ -387,7 +391,9 @@ const ChecklistDetailPage = () => {
               <div>
                 <span className="text-gray-500">作成日: </span>
                 {checklist?.createdAt && (
-                  <span>{new Date(checklist.createdAt).toLocaleDateString()}</span>
+                  <span className="text-gray-900">
+                    {new Date(checklist.createdAt).toLocaleDateString()}
+                  </span>
                 )}
               </div>
             </div>
