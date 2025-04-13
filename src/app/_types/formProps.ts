@@ -4,21 +4,16 @@ import { ChecklistFormData } from "@/app/_types/checklists";
 import { NewItem } from "@/app/_types/checkListItems";
 
 export type formProps = {
-  formData: ChecklistFormData;
-  formErrors: { [key: string]: string };
+  formData?: ChecklistFormData;
   categories: AddCategory;
   selectedCategoryId: number | null;
-  setSelectedCategoryId: (id: number) => void;
+  setSelectedCategoryId: (id: number | null) => void;
   items: NewItem[];
   newItem: NewItem;
   setNewItem: React.Dispatch<React.SetStateAction<NewItem>>;
-  handleNewChecklistChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => void;
-  handleNewItemChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleAddItem: () => void;
+  onSubmit: (data: FormInputs) => void;
   handleRemoveItem: (index: number) => void;
-  handleSubmit: (e: React.FormEvent) => void;
   loading: boolean;
   error: string | null;
   success: string | null;
