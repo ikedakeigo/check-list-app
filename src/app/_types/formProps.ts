@@ -6,6 +6,7 @@ import { NewItem } from "@/app/_types/checkListItems";
 export type formProps = {
   formData?: ChecklistFormData;
   categories: AddCategory;
+  setCategories: React.Dispatch<React.SetStateAction<AddCategory>>;
   selectedCategoryId: number | null;
   setSelectedCategoryId: (id: number | null) => void;
   items: NewItem[];
@@ -15,9 +16,11 @@ export type formProps = {
   onSubmit: (data: FormInputs) => void;
   handleRemoveItem: (index: number) => void;
   loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   error: string | null;
   success: string | null;
-
+  token: string | null;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
   // オプショナルなプロパティ
   isEdit?: boolean;
   checklist?: CheckLists | null;
