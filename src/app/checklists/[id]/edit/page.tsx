@@ -42,7 +42,7 @@ const NewChecklistPage = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
   // アイテムの初期値を関数で定義
-  const initialNewItem = {
+  const initialNewItem: NewItem = {
     name: "",
     quantity: "",
     unit: "",
@@ -54,7 +54,7 @@ const NewChecklistPage = () => {
   const [items, setItems] = useState<NewItem[]>([initialNewItem]);
 
   // 新しいアイテムの入力状態
-  const [newItem, setNewItem] = useState({
+  const [newItem, setNewItem] = useState<NewItem>({
     name: "",
     quantity: "",
     unit: "",
