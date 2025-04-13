@@ -248,24 +248,20 @@ const NewChecklistPage = () => {
 
   return (
     <ChecklistForm
-      formData={formData}
-      formErrors={formErrors}
       categories={categories}
       selectedCategoryId={selectedCategoryId}
       setSelectedCategoryId={setSelectedCategoryId}
       items={items}
       newItem={newItem}
-      handleNewChecklistChange={handleNewChecklistChange}
-      handleNewItemChange={handleNewItemChange}
+      setNewItem={setNewItem}
       handleAddItem={handleAddItem}
       handleRemoveItem={handleRemoveItem}
-      handleSubmit={handleSubmit}
+      onSubmit={onSubmit}
       loading={loading}
       error={error}
       success={success}
       isEdit={false}
     />
-
   );
 };
 
