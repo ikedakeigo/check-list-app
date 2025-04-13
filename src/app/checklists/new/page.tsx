@@ -39,37 +39,9 @@ const NewChecklistPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // カテゴリー一覧を取得
-  const fetchCategories = useCallback(async () => {
-    if (!token) return;
-
-    try {
-      const res = await fetch("/api/categories", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-      });
-      const data: CategoryRequestBody = await res.json();
-
-      if (!res.ok) throw new Error("エラーが発生しました");
-
-      setCategories(data);
-      if (data.length > 0) setSelectedCategoryId(data[0].id);
-    } catch (error) {
-      console.error("エラーが発生しました", error);
-      setError("カテゴリーの取得に失敗しました");
-    } finally {
-      // データの取得が完了したらローディング終了
-      setLoading(false);
-    }
-  }, [token]);
-
   useEffect(() => {
     if (!useAuth || !token) return; // ← tokenが無いなら実行しない
-    setLoading(true);
-    fetchCategories();
-  }, [useAuth, fetchCategories]);
+  }, [useAuth, token]);
 
   // アイテムをリストに追加する関数
   const handleAddItem = () => {
@@ -241,6 +213,7 @@ const NewChecklistPage = () => {
   return (
     <ChecklistForm
       categories={categories}
+      setCategories={setCategories}
       selectedCategoryId={selectedCategoryId}
       setSelectedCategoryId={setSelectedCategoryId}
       items={items}
@@ -250,9 +223,12 @@ const NewChecklistPage = () => {
       handleRemoveItem={handleRemoveItem}
       onSubmit={onSubmit}
       loading={loading}
+      setLoading={setLoading}
       error={error}
+      setError={setError}
       success={success}
       isEdit={false}
+      token={token}
     />
   );
 };

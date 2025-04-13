@@ -117,35 +117,9 @@ const NewChecklistPage = () => {
     }
   }, [token, id]);
 
-  // カテゴリーを取得する関数
-  const fetchCategories = useCallback(async () => {
-    if (!token) return;
-    try {
-      const res = await fetch("/api/categories", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-      });
-
-      if (!res.ok) throw new Error("カテゴリーの取得に失敗しました");
-
-      const data = await res.json();
-      setCategories(data);
-
-      if (data.length > 0 && !selectedCategoryId) {
-        setSelectedCategoryId(data[0].id); // 最初のカテゴリーを選択
-      }
-    } catch (error) {
-      console.error("エラーが発生しました", error);
-      setError("カテゴリーの取得に失敗しました");
-    }
-  }, [token, selectedCategoryId]);
-
   useEffect(() => {
     // tokenがない場合は何もしない
     if (!useAuth || !token) return;
-    fetchCategories();
     fetchChecklist();
     setLoading(true);
   }, [useAuth, token]);
@@ -314,6 +288,7 @@ const NewChecklistPage = () => {
     <ChecklistForm
       formData={formData}
       categories={categories}
+      setCategories={setCategories}
       items={items}
       newItem={newItem}
       setNewItem={setNewItem}
@@ -323,9 +298,12 @@ const NewChecklistPage = () => {
       handleRemoveItem={handleRemoveItem}
       onSubmit={onSubmit}
       loading={loading}
+      setLoading={setLoading}
       error={error}
       success={success}
       isEdit={true}
+      token={token}
+      setError={setError}
     />
   );
 };
