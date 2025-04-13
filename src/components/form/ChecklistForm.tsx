@@ -77,7 +77,8 @@ export default function ChecklistForm({
             <h1 className="text-xl font-bold">チェックリスト編集</h1>
             <div className="flex space-x-2">
               <button
-                onClick={handleSubmit}
+                // onClick={handleSubmit}
+                onClick={handleSubmit(onSubmit)}
                 disabled={loading}
                 className="px-4 py-2 bg-white bg-opacity-20 rounded-lg text-sm disabled:opacity-50"
               >
@@ -132,7 +133,8 @@ export default function ChecklistForm({
             <h1 className="text-xl font-bold">新規チェックリスト</h1>
           </div>
           <button
-            onClick={handleSubmit}
+            // onClick={handleSubmit}
+            onClick={handleSubmit(onSubmit)}
             disabled={loading}
             className="px-4 py-2 bg-white bg-opacity-20 rounded-lg text-sm disabled:opacity-50"
           >
@@ -161,7 +163,7 @@ export default function ChecklistForm({
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* 基本情報 */}
             <div className="bg-white p-4 rounded-lg shadow-sm">
               <h2 className="text-lg font-bold mb-4 text-black">基本情報</h2>
@@ -174,17 +176,18 @@ export default function ChecklistForm({
                   </label>
                   <input
                     id="name"
-                    name="name"
                     type="text"
-                    value={formData.name}
-                    onChange={handleNewChecklistChange}
-                    required
+                    {...register("name", {
+                      required: "チェックリスト名は必須です",
+                      maxLength: {
+                        value: 25,
+                        message: "チェックリスト名は25文字以内で入力してください",
+                      },
+                    })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                     placeholder="例: 〇〇建設現場 1F工事"
                   />
-                  {formErrors.name && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
-                  )}
+                  {errors.name && <p className="text-red-500">{errors.name.message}</p>}
                 </div>
 
                 {/* 説明 */}
@@ -197,9 +200,7 @@ export default function ChecklistForm({
                   </label>
                   <textarea
                     id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleNewChecklistChange}
+                    {...register("description")}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                     placeholder="例: 1階部分の内装工事に必要な工具・材料"
@@ -216,16 +217,20 @@ export default function ChecklistForm({
                   </label>
                   <input
                     id="siteName"
-                    name="siteName"
                     type="text"
-                    value={formData.siteName}
-                    onChange={handleNewChecklistChange}
+                    {...register("siteName", {
+                      required: "現場名は必須です",
+                      maxLength: {
+                        value: 25,
+                        message: "現場名は25文字以内で入力してください",
+                      },
+                    })}
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                     placeholder="例: 〇〇マンション新築工事"
                   />
-                  {formErrors.siteName && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.siteName}</p>
+                  {errors.siteName && (
+                    <p className="mt-1 text-sm text-red-600">{errors.siteName.message}</p>
                   )}
                 </div>
 
@@ -239,34 +244,41 @@ export default function ChecklistForm({
                   </label>
                   <input
                     id="workDate"
-                    name="workDate"
                     type="date"
-                    value={formData.workDate}
-                    onChange={handleNewChecklistChange}
+                    min={new Date().toISOString().split("T")[0]}
+                    {...register("workDate", {
+                      required: "作業日は必須です",
+                      validate: (value) => {
+                        if (!value) return true;
+
+                        const inputDate = new Date(value);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0); // 時間を0にして日付だけ比較
+
+                        // isEditがfalse（新規作成）なら未来日チェック
+                        if (!isEdit && inputDate < today) {
+                          return "作業日は今日以降の日付を選択してください";
+                        }
+                        return true;
+                      },
+                    })}
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                   />
+                  {errors.workDate && <p className="text-red-500">{errors.workDate.message}</p>}
                 </div>
 
-                {/* テンプレートフラグ */}
+                {/* テンプレートフラグ todo アーカイブの処理を後実装する 一時disabled*/}
                 <div className="flex items-center">
                   <input
                     id="isTemplate"
-                    name="isTemplate"
                     type="checkbox"
-                    checked={formData.isTemplate}
-                    onChange={(e) => {
-                      if (setFormData) {
-                        setFormData((prev) => ({ ...prev, isTemplate: e.target.checked }));
-                      } else {
-                        // setFormDataが提供されていない場合は通常のonChangeハンドラーを使用
-                        handleNewChecklistChange(e);
-                      }
-                    }}
+                    {...register("isTemplate")}
+                    disabled
                     className="h-4 w-4 text-blue-600 rounded"
                   />
                   <label htmlFor="isTemplate" className="ml-2 text-sm text-gray-700">
-                    テンプレートとして保存する
+                    テンプレートとして保存する(処理中)
                   </label>
                 </div>
               </div>
@@ -283,8 +295,13 @@ export default function ChecklistForm({
                 </label>
                 <select
                   id="category"
-                  value={selectedCategoryId || ""}
-                  onChange={(e) => setSelectedCategoryId(Number(e.target.value))}
+                  {...register("selectedCategoryId", {
+                    // required: isEdit ? false : "カテゴリーを選択してください",
+                    onChange: (e) => {
+                      setSelectedCategoryId(Number(e.target.value));
+                    },
+                  })}
+                  defaultValue=""
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                 >
                   <option value="" disabled>
@@ -296,6 +313,9 @@ export default function ChecklistForm({
                     </option>
                   ))}
                 </select>
+                {errors.category && (
+                  <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>
+                )}
               </div>
 
               {/* 新規アイテム入力フォーム */}
@@ -305,27 +325,53 @@ export default function ChecklistForm({
                 </label>
                 <input
                   type="text"
-                  name="name"
-                  value={newItem.name}
-                  onChange={handleNewItemChange}
+                  {...register("newItem.name", {
+                    // required: isEdit ? false : "アイテム名は必須です",
+                    maxLength: {
+                      value: 10,
+                      message: "アイテム名は10文字以内で入力してください",
+                    },
+                    onChange: (e) => {
+                      setNewItem((prev) => ({ ...prev, name: e.target.value }));
+                    },
+                  })}
+                  // onChange={handleNewItemChange}
                   placeholder="アイテム名"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                 />
+                {errors.newItem && <p className="text-red-500">{errors.newItem.message}</p>}
+
+                {/* 数量と単位 */}
 
                 <div className="flex space-x-2">
                   <input
                     type="number"
-                    name="quantity"
-                    value={newItem.quantity}
-                    onChange={handleNewItemChange}
+                    {...register("newItem.quantity", {
+                      // required: isEdit ? false : "数量は必須です",
+                      valueAsNumber: true,
+                      min: {
+                        value: 1,
+                        message: "1以上を入力してください",
+                      },
+                      onChange: (e) => {
+                        setNewItem((prev) => ({ ...prev, quantity: e.target.value }));
+                      },
+                    })}
+                    min={1}
+                    max={100}
+                    step={1}
                     placeholder="数量"
                     className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                   />
+                  {errors.quantity && <p className="text-red-500">{errors.quantity.message}</p>}
                   <input
                     type="text"
-                    name="unit"
-                    value={newItem.unit}
-                    onChange={handleNewItemChange}
+                    {...register("unit", {
+                      onChange: (e) => {
+                        setNewItem((prev) => ({ ...prev, unit: e.target.value }));
+                      },
+                    })}
+                    // onChange={handleNewItemChange}
                     placeholder="単位（個、台など）"
                     className="w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                   />
@@ -333,13 +379,25 @@ export default function ChecklistForm({
 
                 <button
                   type="button"
-                  onClick={handleAddItem}
+                  onClick={() => {
+                    handleAddItem();
+
+                    // resetだと全体の値がリセットされるので、restFieldを使用して各フィールドをリセットする
+                    // reset({newItem: { name: "", quantity: Number, unit: "" } });
+
+                    // newItem の各フィールドだけをリセット
+                    resetField("newItem.name");
+                    resetField("newItem.quantity");
+                    resetField("newItem.unit");
+
+                    // カテゴリー選択をリセットする
+                    resetField("selectedCategoryId");
+                    setSelectedCategoryId(null);
+                  }}
                   className={`w-full py-2 rounded-lg flex items-center justify-center ${
-                    newItem.name.trim() && newItem.quantity
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-300 text-gray-500"
+                    isAddDisabled ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-500"
                   }`}
-                  disabled={!newItem.name.trim() || !newItem.quantity}
+                  disabled={isAddDisabled}
                 >
                   <PlusIcon />
                   <span className="ml-2">アイテムを追加</span>
