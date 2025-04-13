@@ -79,33 +79,6 @@ const NewChecklistPage = () => {
     fetchCategories();
   }, [useAuth, fetchCategories]);
 
-  // チェックリストフォーム入力の変更を処理する関数
-  /**
-   * イベントからname,value,typeを取得し、
-   */
-  const handleNewChecklistChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-
-    // チェックボックスの場合は特別な処理
-    if (type === "checkbox") {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData((prev) => ({ ...prev, [name]: checked }));
-      return;
-    }
-
-    // 通常のフォーム入力の場合
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setFormErrors((prev) => ({ ...prev, [name]: "" })); // エラーメッセージをクリア
-  };
-
-  // 新しいアイテムの入力変更を処理する関数
-  const handleNewItemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewItem((prev) => ({ ...prev, [name]: value }));
-  };
-
   // アイテムをリストに追加する関数
   const handleAddItem = () => {
     // 入力チェック
