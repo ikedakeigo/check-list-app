@@ -4,29 +4,26 @@ import useAuthCheck from "@/app/_hooks/useAuthCheck";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
 import { AddCategory, CategoryRequestBody } from "@/app/_types/category";
 import { NewItem } from "@/app/_types/checkListItems";
+import { FormInputs } from "@/app/_types/formProps";
 import ChecklistForm from "@/components/form/ChecklistForm";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
 
 const NewChecklistPage = () => {
   const router = useRouter();
   const useAuth = useAuthCheck();
 
+  const { id } = useParams();
+
   const { token } = useSupabaseSession();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    siteName: "",
-    workDate: new Date().toISOString().split("T")[0], // 今日の日付
-    isTemplate: false,
-  });
-
-  const [formErrors, setFormErrors] = useState<{
-    name?: string;
-    siteName?: string;
-    workDate?: string;
-  }>({});
+  // const [formData, setFormData] = useState({
+  //   name: "",
+  //   description: "",
+  //   siteName: "",
+  //   workDate: new Date().toISOString().split("T")[0], // 今日の日付
+  //   isTemplate: false,
+  // });
 
   // カテゴリー関連の状態
   const [categories, setCategories] = useState<AddCategory>([]);
