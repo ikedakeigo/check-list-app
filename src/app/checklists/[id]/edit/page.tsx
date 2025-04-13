@@ -29,12 +29,6 @@ const NewChecklistPage = () => {
     isTemplate: false,
   });
 
-  const [formErrors, setFormErrors] = useState<{
-    name?: string;
-    siteName?: string;
-    workDate?: string;
-  }>({});
-
   // カテゴリー関連の状態
   const [categories, setCategories] = useState<AddCategory>([]);
 
@@ -151,35 +145,10 @@ const NewChecklistPage = () => {
   useEffect(() => {
     // tokenがない場合は何もしない
     if (!useAuth || !token) return;
-    setLoading(true);
-
-    fetchChecklist();
     fetchCategories();
+    fetchChecklist();
+    setLoading(true);
   }, [useAuth, token]);
-
-  // チェックリストフォーム入力の変更を処理する関数
-  const handleNewChecklistChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-
-    // チェックボックスの場合は特別な処理
-    if (type === "checkbox") {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData((prev) => ({ ...prev, [name]: checked }));
-      return;
-    }
-
-    // 通常のフォーム入力の場合
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setFormErrors((prev) => ({ ...prev, [name]: "" })); // エラーメッセージをクリア
-  };
-
-  // 新しいアイテムの入力変更を処理する関数
-  const handleNewItemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewItem((prev) => ({ ...prev, [name]: value }));
-  };
 
   // アイテムをリストに追加する関数
   const handleAddItem = () => {
@@ -203,9 +172,6 @@ const NewChecklistPage = () => {
     // ...prevには既存のアイテムが入っている
     setItems((prev) => [...prev, item]);
 
-    // 入力値をクリア
-    setNewItem(initialNewItem);
-
     setError(null);
   };
 
@@ -221,32 +187,6 @@ const NewChecklistPage = () => {
     setSuccess(null);
 
     console.log("送信データ", data.name);
-
-    // const errors = { ...formErrors };
-
-    // let hasError = false;
-
-    // // 入力チェック
-    // if (!formData.name.trim()) {
-    //   errors.name = "チェックリスト名を入力してください";
-    //   hasError = true;
-    // }
-
-    // if (!formData.workDate) {
-    //   errors.workDate = "作業日を入力してください";
-    //   hasError = true;
-    // }
-
-    // if (!formData.siteName.trim()) {
-    //   errors.siteName = "現場名を入力してください";
-    //   hasError = true;
-    // }
-
-    // if (hasError) {
-    //   setFormErrors(errors);
-    //   setLoading(false);
-    //   return;
-    // }
 
     try {
       if (id) {
