@@ -1,63 +1,60 @@
-import { AddCategory } from "@/app/_types/category";
-import { CheckLists } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import BackIcon from "../icons/BackIcon";
 import TrashIcon from "../icons/TrashIcon";
 import PlusIcon from "../icons/PlusIcon";
-import { ChecklistFormData } from "@/app/_types/checklists";
-import { NewItem } from "@/app/_types/checkListItems";
 
-type Props = {
-  formData: ChecklistFormData;
-  formErrors: { [key: string]: string };
-  categories: AddCategory;
-  selectedCategoryId: number | null;
-  setSelectedCategoryId: (id: number) => void;
-  items: NewItem[]; 
-  newItem: NewItem;
-  handleNewChecklistChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => void;
-  handleNewItemChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleAddItem: () => void;
-  handleRemoveItem: (index: number) => void;
-  handleSubmit: (e: React.FormEvent) => void;
-  loading: boolean;
-  error: string | null;
-  success: string | null;
-
-  // オプショナルなプロパティ
-  isEdit?: boolean;
-  checklist?: CheckLists | null;
-  id?: string | number;
-  setFormData?: React.Dispatch<React.SetStateAction<ChecklistFormData>>;
-  handleArchiveChecklist?: () => void;
-  handleDeleteChecklist?: () => void;
-};
+import { useForm } from "react-hook-form";
+import { FormInputs, formProps } from "@/app/_types/formProps";
+import { useEffect } from "react";
 
 export default function ChecklistForm({
   formData,
-  setFormData,
-  formErrors,
-  handleAddItem,
-  handleRemoveItem,
+  categories,
+  items,
   newItem,
-  handleNewItemChange,
   selectedCategoryId,
   setSelectedCategoryId,
-  items,
-  categories,
-  handleSubmit,
-  isEdit,
-  handleArchiveChecklist,
-  handleDeleteChecklist,
+  handleAddItem,
+  handleRemoveItem,
   loading,
   error,
   success,
-  handleNewChecklistChange,
-}: Props) {
-
+  isEdit,
+  onSubmit,
+  setNewItem,
+  handleArchiveChecklist,
+  handleDeleteChecklist,
+}: formProps) {
   const router = useRouter();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }, // react-hook-form が自動的にバリデーションエラーを管理
+    reset,
+    resetField,
+  } = useForm<FormInputs>({
+    defaultValues: {
+
+      // 新規作成時の初期値
+      // 値がない場合は空文字列を設定
+      name: formData?.name ?? "",
+      description: formData?.description ?? "",
+      siteName: formData?.siteName ?? "",
+      workDate: formData?.workDate ?? new Date().toISOString().split("T")[0],
+      isTemplate: formData?.isTemplate ?? false,
+    },
+  });
+
+  useEffect(() => {
+    if (formData) {
+      // 親コンポーネントから渡されたformDataを使ってフォームの値を設定
+      reset(formData);
+    }
+  }, [formData, reset]);
+
+  console.log("初期データ", formData); // 値があるか確認
+  const isAddDisabled = !newItem.name.trim() || !newItem.quantity || !selectedCategoryId;
 
   return (
     <div className="min-h-screen bg-gray-50">
