@@ -5,6 +5,7 @@ import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
 import { AddCategory } from "@/app/_types/category";
 import { ItemsRes, NewItem } from "@/app/_types/checkListItems";
 import { ChecklistFormData } from "@/app/_types/checklists";
+import { FormInputs } from "@/app/_types/formProps";
 import ChecklistForm from "@/components/form/ChecklistForm";
 import { useParams, useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
@@ -214,37 +215,38 @@ const NewChecklistPage = () => {
   };
 
   // フォーム送信処理
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: FormInputs) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
-    const errors = { ...formErrors };
+    console.log("送信データ", data.name);
 
-    let hasError = false;
+    // const errors = { ...formErrors };
 
-    // 入力チェック
-    if (!formData.name.trim()) {
-      errors.name = "チェックリスト名を入力してください";
-      hasError = true;
-    }
+    // let hasError = false;
 
-    if (!formData.workDate) {
-      errors.workDate = "作業日を入力してください";
-      hasError = true;
-    }
+    // // 入力チェック
+    // if (!formData.name.trim()) {
+    //   errors.name = "チェックリスト名を入力してください";
+    //   hasError = true;
+    // }
 
-    if (!formData.siteName.trim()) {
-      errors.siteName = "現場名を入力してください";
-      hasError = true;
-    }
+    // if (!formData.workDate) {
+    //   errors.workDate = "作業日を入力してください";
+    //   hasError = true;
+    // }
 
-    if (hasError) {
-      setFormErrors(errors);
-      setLoading(false);
-      return;
-    }
+    // if (!formData.siteName.trim()) {
+    //   errors.siteName = "現場名を入力してください";
+    //   hasError = true;
+    // }
+
+    // if (hasError) {
+    //   setFormErrors(errors);
+    //   setLoading(false);
+    //   return;
+    // }
 
     try {
       if (id) {
