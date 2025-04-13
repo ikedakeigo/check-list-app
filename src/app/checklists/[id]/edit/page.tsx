@@ -313,23 +313,19 @@ const NewChecklistPage = () => {
   return (
     <ChecklistForm
       formData={formData}
-      setFormData={setFormData} // setFormDataを渡す
-      formErrors={formErrors}
       categories={categories}
-      selectedCategoryId={selectedCategoryId}
-      setSelectedCategoryId={setSelectedCategoryId}
       items={items}
       newItem={newItem}
-      handleNewChecklistChange={handleNewChecklistChange}
-      handleNewItemChange={handleNewItemChange}
+      setNewItem={setNewItem}
+      selectedCategoryId={selectedCategoryId}
+      setSelectedCategoryId={setSelectedCategoryId}
       handleAddItem={handleAddItem}
       handleRemoveItem={handleRemoveItem}
-      handleSubmit={handleSubmit}
+      onSubmit={onSubmit}
       loading={loading}
       error={error}
       success={success}
       isEdit={true}
-      id={id as string} // idを渡す
     />
   );
 };
