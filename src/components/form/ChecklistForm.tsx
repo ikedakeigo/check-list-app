@@ -17,6 +17,7 @@ export default function ChecklistForm({
   handleAddItem,
   handleRemoveItem,
   loading,
+  setLoading,
   error,
   success,
   isEdit,
@@ -24,6 +25,9 @@ export default function ChecklistForm({
   setNewItem,
   handleArchiveChecklist,
   handleDeleteChecklist,
+  token,
+  setCategories,
+  setError,
 }: formProps) {
   const router = useRouter();
 
@@ -47,11 +51,42 @@ export default function ChecklistForm({
   });
 
   useEffect(() => {
+    if (!token) return;
+
     if (formData) {
       // 親コンポーネントから渡されたformDataを使ってフォームの値を設定
       reset(formData);
     }
-  }, [formData, reset]);
+
+    const fetchCategories = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/categories", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token,
+          },
+        });
+
+        if (!res.ok) throw new Error("カテゴリーの取得に失敗しました");
+
+        const data = await res.json();
+        setCategories(data);
+
+        if (data.length > 0 && !selectedCategoryId) {
+          setSelectedCategoryId(data[0].id);
+        }
+      } catch (err) {
+        console.error("カテゴリー取得エラー", err);
+        setError("カテゴリーの取得に失敗しました");
+      } finally {
+        //データの取得が完了したらローディング終了
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [token, formData, reset, setCategories, setSelectedCategoryId]);
 
   console.log("初期データ", formData); // 値があるか確認
   const isAddDisabled = !newItem.name.trim() || !newItem.quantity || !selectedCategoryId;
