@@ -17,14 +17,6 @@ const NewChecklistPage = () => {
 
   const { token } = useSupabaseSession();
 
-  // const [formData, setFormData] = useState({
-  //   name: "",
-  //   description: "",
-  //   siteName: "",
-  //   workDate: new Date().toISOString().split("T")[0], // 今日の日付
-  //   isTemplate: false,
-  // });
-
   // カテゴリー関連の状態
   const [categories, setCategories] = useState<AddCategory>([]);
 
