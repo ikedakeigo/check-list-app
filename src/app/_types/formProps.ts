@@ -2,6 +2,7 @@ import { AddCategory } from "@/app/_types/category";
 import { CheckLists } from "@prisma/client";
 import { ChecklistFormData } from "@/app/_types/checklists";
 import { NewItem } from "@/app/_types/checkListItems";
+import { SubmitHandler } from "react-hook-form";
 
 export type formProps = {
   formData?: ChecklistFormData;
@@ -13,7 +14,7 @@ export type formProps = {
   newItem: NewItem;
   setNewItem: React.Dispatch<React.SetStateAction<NewItem>>;
   handleAddItem: () => void;
-  onSubmit: (data: FormInputs) => void;
+  onSubmit: SubmitHandler<FormInputs>;
   handleRemoveItem: (index: number) => void;
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
