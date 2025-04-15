@@ -26,30 +26,60 @@ const ChecklistDetailPage = () => {
       try {
         setLoading(true);
 
-        // チェックリスト詳細を取得
-        const checklistRes = await fetch(`/api/checklists/${id}`, {
-          headers: {
-            Authorization: token,
-          },
-        });
+        const [checklistRes, itemsRes] = await Promise.all([
+          // チェックリストの詳細を取得
+          fetch(`/api/checklists/${id}`, {
+            headers: {
+              Authorization: token,
+            }
+          }),
+
+          // チェックリストのアイテムを取得
+          fetch(`/api/checklists/${id}/items`, {
+            headers: {
+              Authorization: token,
+            },
+          })
+        ])
 
         if (!checklistRes.ok) throw new Error("チェックリストの取得に失敗しました");
-
-        const checklistData = await checklistRes.json();
-        setChecklist(checklistData);
-
-        // チェックリストのアイテムを取得
-        const itemsRes = await fetch(`/api/checklists/${id}/items`, {
-          headers: {
-            Authorization: token,
-          },
-        });
-
         if (!itemsRes.ok) throw new Error("チェックリストのアイテムの取得に失敗しました");
 
-        const itemsData = await itemsRes.json();
+        const [checklistData, itemsData] = await Promise.all([
+          checklistRes.json(),
+          itemsRes.json()
+        ])
 
+        console.log("checklistData", checklistData);
+        console.log("itemsData", itemsData);
+
+        setChecklist(checklistData);
         setItems(itemsData);
+
+        // チェックリスト詳細を取得
+        // const checklistRes = await fetch(`/api/checklists/${id}`, {
+        //   headers: {
+        //     Authorization: token,
+        //   },
+        // });
+
+        // if (!checklistRes.ok) throw new Error("チェックリストの取得に失敗しました");
+
+        // const checklistData = await checklistRes.json();
+        // setChecklist(checklistData);
+
+        // チェックリストのアイテムを取得
+        // const itemsRes = await fetch(`/api/checklists/${id}/items`, {
+        //   headers: {
+        //     Authorization: token,
+        //   },
+        // });
+
+        // if (!itemsRes.ok) throw new Error("チェックリストのアイテムの取得に失敗しました");
+
+        // const itemsData = await itemsRes.json();
+
+        // setItems(itemsData);
 
         // カテゴリごとにアイテムをグループ化
         /**
