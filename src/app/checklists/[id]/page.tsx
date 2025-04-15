@@ -56,31 +56,6 @@ const ChecklistDetailPage = () => {
         setChecklist(checklistData);
         setItems(itemsData);
 
-        // チェックリスト詳細を取得
-        // const checklistRes = await fetch(`/api/checklists/${id}`, {
-        //   headers: {
-        //     Authorization: token,
-        //   },
-        // });
-
-        // if (!checklistRes.ok) throw new Error("チェックリストの取得に失敗しました");
-
-        // const checklistData = await checklistRes.json();
-        // setChecklist(checklistData);
-
-        // チェックリストのアイテムを取得
-        // const itemsRes = await fetch(`/api/checklists/${id}/items`, {
-        //   headers: {
-        //     Authorization: token,
-        //   },
-        // });
-
-        // if (!itemsRes.ok) throw new Error("チェックリストのアイテムの取得に失敗しました");
-
-        // const itemsData = await itemsRes.json();
-
-        // setItems(itemsData);
-
         // カテゴリごとにアイテムをグループ化
         /**
          * Record<キーの型, 値の型>
