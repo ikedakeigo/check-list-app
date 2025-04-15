@@ -9,6 +9,7 @@ import { FormInputs } from "@/app/_types/formProps";
 import ChecklistForm from "@/components/form/ChecklistForm";
 import { useParams, useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
+import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 
 const NewChecklistPage = () => {
   const router = useRouter();
@@ -21,13 +22,23 @@ const NewChecklistPage = () => {
   // todo 更新関数のみを使用している現状だったので、完全に不要なので削除
   // const [, setUser] = useState<User | null>(null);
 
-  const [formData, setFormData] = useState<ChecklistFormData>({
-    name: "",
-    description: "",
-    siteName: "",
-    workDate: new Date().toISOString().split("T")[0], // 今日の日付
-    isTemplate: false,
+  const methods = useForm<FormInputs>({
+    defaultValues: {
+      name: "",
+      description: "",
+      workDate: new Date().toISOString().split("T")[0],
+      siteName: "",
+      isTemplate: false,
+    },
   });
+
+  // const [formData, setFormData] = useState<ChecklistFormData>({
+  //   name: "",
+  //   description: "",
+  //   siteName: "",
+  //   workDate: new Date().toISOString().split("T")[0], // 今日の日付
+  //   isTemplate: false,
+  // });
 
   // カテゴリー関連の状態
   const [categories, setCategories] = useState<AddCategory>([]);
@@ -109,6 +120,14 @@ const NewChecklistPage = () => {
 
       setItems(formattedItems);
       setSelectedCategoryId(formattedItems[0]?.categoryId || null); // 最初のアイテムのカテゴリーIDを選択
+
+      methods.reset({
+        name: checkListData.name,
+        description: checkListData.description,
+        siteName: checkListData.siteName,
+        workDate: new Date(checkListData.workDate).toISOString().split("T")[0],
+        isTemplate: checkListData.isTemplate,
+      });
     } catch (error) {
       console.error("エラーが発生しました", error);
       setError("カテゴリーの取得に失敗しました");
@@ -155,7 +174,7 @@ const NewChecklistPage = () => {
   };
 
   // フォーム送信処理
-  const onSubmit = async (data: FormInputs) => {
+  const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -285,26 +304,28 @@ const NewChecklistPage = () => {
   };
 
   return (
-    <ChecklistForm
-      formData={formData}
-      categories={categories}
-      setCategories={setCategories}
-      items={items}
-      newItem={newItem}
-      setNewItem={setNewItem}
-      selectedCategoryId={selectedCategoryId}
-      setSelectedCategoryId={setSelectedCategoryId}
-      handleAddItem={handleAddItem}
-      handleRemoveItem={handleRemoveItem}
-      onSubmit={onSubmit}
-      loading={loading}
-      setLoading={setLoading}
-      error={error}
-      success={success}
-      isEdit={true}
-      token={token}
-      setError={setError}
-    />
+    <FormProvider {...methods}>
+      <ChecklistForm
+        // formData={formData}
+        categories={categories}
+        setCategories={setCategories}
+        items={items}
+        newItem={newItem}
+        setNewItem={setNewItem}
+        selectedCategoryId={selectedCategoryId}
+        setSelectedCategoryId={setSelectedCategoryId}
+        handleAddItem={handleAddItem}
+        handleRemoveItem={handleRemoveItem}
+        onSubmit={methods.handleSubmit(onSubmit)}
+        loading={loading}
+        setLoading={setLoading}
+        error={error}
+        success={success}
+        isEdit={true}
+        token={token}
+        setError={setError}
+      />
+    </FormProvider>
   );
 };
 
