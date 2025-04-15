@@ -3,12 +3,11 @@ import BackIcon from "../icons/BackIcon";
 import TrashIcon from "../icons/TrashIcon";
 import PlusIcon from "../icons/PlusIcon";
 
-import { useForm } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { FormInputs, formProps } from "@/app/_types/formProps";
 import { useEffect } from "react";
 
 export default function ChecklistForm({
-  formData,
   categories,
   items,
   newItem,
@@ -34,29 +33,14 @@ export default function ChecklistForm({
   const {
     register,
     handleSubmit,
-    formState: { errors }, // react-hook-form が自動的にバリデーションエラーを管理
+    formState: { errors },
     reset,
     resetField,
-  } = useForm<FormInputs>({
-    defaultValues: {
-
-      // 新規作成時の初期値
-      // 値がない場合は空文字列を設定
-      name: formData?.name ?? "",
-      description: formData?.description ?? "",
-      siteName: formData?.siteName ?? "",
-      workDate: formData?.workDate ?? new Date().toISOString().split("T")[0],
-      isTemplate: formData?.isTemplate ?? false,
-    },
-  });
+    getValues
+  } = useFormContext<FormInputs>();
 
   useEffect(() => {
     if (!token) return;
-
-    if (formData) {
-      // 親コンポーネントから渡されたformDataを使ってフォームの値を設定
-      reset(formData);
-    }
 
     const fetchCategories = async () => {
       setLoading(true);
@@ -86,9 +70,9 @@ export default function ChecklistForm({
     };
 
     fetchCategories();
-  }, [token, formData, reset, setCategories, setSelectedCategoryId]);
+  }, [token, reset, setCategories, setSelectedCategoryId]);
 
-  console.log("初期データ", formData); // 値があるか確認
+  console.log("初期データ", getValues); // 値があるか確認
   const isAddDisabled = !newItem.name.trim() || !newItem.quantity || !selectedCategoryId;
 
   return (
