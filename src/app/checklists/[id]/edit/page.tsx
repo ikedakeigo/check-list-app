@@ -87,25 +87,24 @@ const NewChecklistPage = () => {
             "Content-Type": "application/json",
             Authorization: token,
           },
-        })
+        }),
       ]);
 
       if (!checkListRes.ok) throw new Error("チェックリストの取得に失敗しました");
       if (!itemsRes.ok) throw new Error("アイテムの取得に失敗しました");
 
-
-      const [checkListData, itemsData]:[ChecklistFormData, ItemsRes] = await Promise.all([
+      const [checkListData, itemsData]: [ChecklistFormData, ItemsRes] = await Promise.all([
         checkListRes.json(),
-        itemsRes.json()
+        itemsRes.json(),
       ]);
 
-      setFormData({
-        name: checkListData.name || "",
-        description: checkListData.description || "",
-        siteName: checkListData.siteName || "",
-        workDate: checkListData.workDate ? new Date(checkListData.workDate).toISOString().split("T")[0] : "",
-        isTemplate: checkListData.isTemplate || false,
-      });
+      // setFormData({
+      //   name: checkListData.name || "",
+      //   description: checkListData.description || "",
+      //   siteName: checkListData.siteName || "",
+      //   workDate: checkListData.workDate ? new Date(checkListData.workDate).toISOString().split("T")[0] : "",
+      //   isTemplate: checkListData.isTemplate || false,
+      // });
 
       // アイテムをセット
       const formattedItems = itemsData.map((item) => ({
