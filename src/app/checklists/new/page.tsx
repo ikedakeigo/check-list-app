@@ -7,7 +7,8 @@ import { NewItem } from "@/app/_types/checkListItems";
 import { FormInputs } from "@/app/_types/formProps";
 import ChecklistForm from "@/components/form/ChecklistForm";
 import { useParams, useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 
 const NewChecklistPage = () => {
   const router = useRouter();
@@ -16,6 +17,16 @@ const NewChecklistPage = () => {
   const { id } = useParams();
 
   const { token } = useSupabaseSession();
+
+    const methods = useForm<FormInputs>({
+      defaultValues: {
+        name: "",
+        description: "",
+        workDate: new Date().toISOString().split("T")[0],
+        siteName: "",
+        isTemplate: false,
+      },
+    });
 
   // カテゴリー関連の状態
   const [categories, setCategories] = useState<AddCategory>([]);
@@ -83,7 +94,7 @@ const NewChecklistPage = () => {
   };
 
   // フォーム送信処理
-  const onSubmit = async (data: FormInputs) => {
+  const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -211,6 +222,7 @@ const NewChecklistPage = () => {
   };
 
   return (
+    <FormProvider {...methods}>
     <ChecklistForm
       categories={categories}
       setCategories={setCategories}
@@ -221,7 +233,7 @@ const NewChecklistPage = () => {
       setNewItem={setNewItem}
       handleAddItem={handleAddItem}
       handleRemoveItem={handleRemoveItem}
-      onSubmit={onSubmit}
+      onSubmit={methods.handleSubmit(onSubmit)}
       loading={loading}
       setLoading={setLoading}
       error={error}
@@ -230,6 +242,7 @@ const NewChecklistPage = () => {
       isEdit={false}
       token={token}
     />
+    </FormProvider>
   );
 };
 
