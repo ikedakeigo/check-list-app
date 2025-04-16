@@ -50,6 +50,7 @@ export type NewItem = {
   unit: string;
   categoryId: number | null;
   categoryName: string;
+  status: ChecklistStatus;
 };
 
 export type GroupedItemsType = {
@@ -71,5 +72,5 @@ export type ItemsRes = {
     id: number;
     name: string;
   };
-  status: string;
+  status: ChecklistStatus;
 }[];
