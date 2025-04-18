@@ -3,7 +3,7 @@
 import useAuthCheck from "@/app/_hooks/useAuthCheck";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
 import { AddCategory, CategoryRequestBody } from "@/app/_types/category";
-import { NewItem } from "@/app/_types/checkListItems";
+import { ChecklistStatus, NewItem } from "@/app/_types/checkListItems";
 import { FormInputs } from "@/app/_types/formProps";
 import ChecklistForm from "@/components/form/ChecklistForm";
 import { useParams, useRouter } from "next/navigation";
@@ -44,6 +44,7 @@ const NewChecklistPage = () => {
     unit: "",
     categoryId: null,
     categoryName: "",
+    status: ChecklistStatus.NotStarted,
   });
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -69,6 +70,7 @@ const NewChecklistPage = () => {
       unit: newItem.unit,
       categoryId: selectedCategoryId,
       categoryName: categories.find((c) => c.id === selectedCategoryId)?.name || "",
+      status: ChecklistStatus.NotStarted,
     };
 
     // アイテムリストに追加
@@ -83,6 +85,7 @@ const NewChecklistPage = () => {
       unit: "",
       categoryId: null,
       categoryName: "",
+      status: ChecklistStatus.NotStarted,
     });
 
     setError(null);
