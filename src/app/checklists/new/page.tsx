@@ -236,7 +236,7 @@ const NewChecklistPage = () => {
       setNewItem={setNewItem}
       handleAddItem={handleAddItem}
       handleRemoveItem={handleRemoveItem}
-      onSubmit={methods.handleSubmit(onSubmit)}
+      onSubmit={onSubmit}
       loading={loading}
       setLoading={setLoading}
       error={error}
