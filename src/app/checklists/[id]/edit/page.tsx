@@ -3,7 +3,7 @@
 import useAuthCheck from "@/app/_hooks/useAuthCheck";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
 import { AddCategory } from "@/app/_types/category";
-import { ItemsRes, NewItem } from "@/app/_types/checkListItems";
+import { ChecklistStatus, ItemsRes, NewItem } from "@/app/_types/checkListItems";
 import { ChecklistFormData } from "@/app/_types/checklists";
 import { FormInputs } from "@/app/_types/formProps";
 import ChecklistForm from "@/components/form/ChecklistForm";
@@ -53,6 +53,7 @@ const NewChecklistPage = () => {
     unit: "",
     categoryId: null,
     categoryName: "",
+    status: ChecklistStatus.NotStarted,
   };
 
   // アイテム管理の状態
@@ -65,6 +66,7 @@ const NewChecklistPage = () => {
     unit: "",
     categoryId: null,
     categoryName: "",
+    status: ChecklistStatus.NotStarted,
   });
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -157,6 +159,7 @@ const NewChecklistPage = () => {
       unit: newItem.unit,
       categoryId: selectedCategoryId,
       categoryName: categories.find((c) => c.id === selectedCategoryId)?.name || "",
+      status: ChecklistStatus.NotStarted,
     };
 
     // アイテムリストに追加
@@ -203,6 +206,7 @@ const NewChecklistPage = () => {
             workDate: data.workDate,
             siteName: data.siteName,
             isTemplate: data.isTemplate,
+            status: data,
           }),
         });
 
@@ -227,7 +231,7 @@ const NewChecklistPage = () => {
                 quantity: item.quantity ? parseInt(item.quantity) : null,
                 unit: item.unit,
                 categoryId: item.categoryId,
-                status: "NotStarted",
+                status: item.status,
               }),
             });
           })
