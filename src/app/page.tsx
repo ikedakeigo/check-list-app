@@ -2,45 +2,33 @@
 
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { CheckListItemsRequestBody } from "./_types/checkListItems";
+import { RecentCheckList, TodaysCheckList } from "./_types/checkListItems";
 import { NotificationRequestBody } from "./_types/notification";
 import Header from "@/components/header/page";
 import ArchiveIcon from "@/components/icons/ArchiveIcon";
 import PlusIcon from "@/components/icons/PlusIcon";
+import useAuthCheck from "./_hooks/useAuthCheck";
+import Link from "next/link";
 
-
-
-const HonePage = () => {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+const HomePage = () => {
+  const [user] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [todayChecklists, setTodayChecklists] = useState<CheckListItemsRequestBody[]>([]);
-  const [recentChecklists, setResentChecklists] = useState<CheckListItemsRequestBody[]>([]);
+  const [todayChecklists, setTodayChecklists] = useState<TodaysCheckList>([]);
+  const [recentChecklists, setResentChecklists] = useState<RecentCheckList>([]);
   const [notifications, setNotifications] = useState<NotificationRequestBody[]>([]);
 
-  // ログインユーザー情報を取得
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-      setUser(user);
-      fetchData(user.id);
-    };
+  const authUser = useAuthCheck();
 
-    checkUser();
-  }, [router]);
+  // 新規チェックリスト作成ページへ
+  // const handleCreateNew = () => {
+  //   router.push("/checklists/new");
+  // };
 
   // データ取得
   const fetchData = async (userId: string) => {
-    setLoading(true);
     try {
+      setLoading(true);
       // 今日のチェックリストを取得
       const tody = new Date();
       tody.setHours(0, 0, 0, 0);
@@ -48,15 +36,16 @@ const HonePage = () => {
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       const { data: todayData, error: todayError } = await supabase
-      .from("CheckLists")
-      .select("*")
-      .eq("userId", userId)
-      .gte("createdAt", tody.toISOString())
-      .lt("createdAt", tomorrow.toISOString())
-      .is("archivedAt", null).limit(5);
+        .from("CheckLists")
+        .select("*")
+        .eq("userId", userId)
+        .gte("createdAt", tody.toISOString())
+        .lt("createdAt", tomorrow.toISOString())
+        .is("archivedAt", null)
+        .limit(5);
 
       // エラーがあればコンソールに出力
-      if(todayError) {
+      if (todayError) {
         console.error("Error fetching today checklists:", todayError);
       } else {
         // 今日のチェックリストをセット
@@ -65,27 +54,27 @@ const HonePage = () => {
 
       // 最近のチェックリストを取得
       const { data: recentData, error: recentError } = await supabase
-      .from("CheckLists")
-      .select("*")
-      .eq("userId", userId)
-      .is("archivedAt", null)
-      .order("createdAt", { ascending: false })
-      .limit(5);
+        .from("CheckLists")
+        .select("*")
+        .eq("userId", userId)
+        .is("archivedAt", null)
+        .order("createdAt", { ascending: false })
+        .limit(5);
 
       if (recentError) {
         console.error("Error fetching recent checklists:", recentError);
-      }else {
+      } else {
         // 最近のチェックリストをセット
         setResentChecklists(recentData || []);
       }
 
       // 通知を取得
       const { data: notifData, error: notificationError } = await supabase
-      .from("Notification")
-      .select("*")
-      .eq("userId", userId)
-      .order("createdAt", { ascending: false })
-      .limit(3);
+        .from("Notification")
+        .select("*")
+        .eq("userId", userId)
+        .order("createdAt", { ascending: false })
+        .limit(3);
 
       if (notificationError) {
         console.error("Error fetching notifications:", notificationError);
@@ -97,16 +86,23 @@ const HonePage = () => {
       if (recentData) setResentChecklists(recentData);
       if (notifData) setNotifications(notifData);
     } catch (error) {
-      console.error("Error fetching data:", error.message);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSinOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
+  // 認証済みユーザーが取得できたらデータを取得
+  useEffect(() => {
+    if (authUser) {
+      fetchData(authUser.id);
+    }
+  }, [authUser]);
+
+  // const handleSinOut = async () => {
+  //   await supabase.auth.signOut();
+  //   router.push("/login");
+  // };
 
   // ダミーデータ
   const stats = [
@@ -116,20 +112,21 @@ const HonePage = () => {
   ];
 
   // サンプルデータ
-  const dummyChecklists = [
-    { id: 1, title: "サンプルチェックリスト", date: "2021-09-01", completed: 8, total: 10 },
-    { id: 2, name: "△△改修工事", date: "2024-01-18", completed: 5, total: 5 },
-    { id: 3, name: "××ビル設備工事", date: "2024-01-17", completed: 12, total: 15 },
-  ];
+  // const dummyChecklists = [
+  //   { id: 1, title: "サンプルチェックリスト", date: "2021-09-01", completed: 8, total: 10 },
+  //   { id: 2, name: "△△改修工事", date: "2024-01-18", completed: 5, total: 5 },
+  //   { id: 3, name: "××ビル設備工事", date: "2024-01-17", completed: 12, total: 15 },
+  // ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
-     <Header
-      title="現場マネジ"
-      showNotification
-      notificationCount={notifications.length}
-      userName={user?.user_metadata?.name || user?.email}
-     />
+      <Header
+        title="現場マネジ"
+        showNotification
+        notificationCount={notifications.length}
+        userName={user?.user_metadata?.name || user?.email}
+      />
 
       {/* メインコンテンツ */}
       <main className="p-4 pb-24">
@@ -154,22 +151,29 @@ const HonePage = () => {
               <h2 className="text-lg font-bold mb-4">今日の現場</h2>
               <div className="space-y-3">
                 {todayChecklists.length > 0 ? (
-                  todayChecklists.map((checklist: any) => (
+                  todayChecklists.map((checklist) => (
                     <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium">{checklist.name}</h3>
-                        <span className="text-sm text-gray-500">{new Date(checklist.workDate).toLocaleDateString()}</span>
+                        <span className="text-sm text-gray-500">
+                          {new Date(checklist.workDate).toLocaleDateString()}
+                        </span>
                       </div>
                       <p className="text-sm text-gray-600 mb-2">{checklist.siteName}</p>
                       <div className="flex items-center">
                         <div className="flex-1 bg-gray-200 rounded-full h-2">
                           <div
                             className="bg-green-500 h-2 rounded-full"
-                            style={{ width: `${(checklist.completedItems || 0) / (checklist.totalItems || 1) * 100}%` }}
+                            style={{
+                              width: `${
+                                ((checklist.completedItems || 0) / (checklist.totalItems || 1)) *
+                                100
+                              }%`,
+                            }}
                           ></div>
                         </div>
                         <span className="ml-4 text-sm text-gray-600">
-                          {checklist.completedItems || 0}/{checklist.totalItems || '?'}
+                          {checklist.completedItems || 0}/{checklist.totalItems || "?"}
                         </span>
                       </div>
                     </div>
@@ -187,20 +191,28 @@ const HonePage = () => {
               <h2 className="text-lg font-bold mb-4">最近のチェックリスト</h2>
               <div className="space-y-3">
                 {recentChecklists.length > 0 ? (
-                  recentChecklists.map((checklist: any) => (
+                  recentChecklists.map((checklist) => (
                     <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium">{checklist.name}</h3>
-                        <span className="text-sm text-gray-500">{new Date(checklist.createdAt).toLocaleDateString()}</span>
+                        <span className="text-sm text-gray-500">
+                          {new Date(checklist.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{checklist.siteName || '現場名なし'}</p>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {checklist.siteName || "現場名なし"}
+                      </p>
                       {/* プログレスバーの代わりに */}
                       <div className="flex justify-between text-sm">
                         <span className="text-blue-600">詳細を見る</span>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          checklist.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {checklist.status === 'Completed' ? '完了' : '進行中'}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            checklist.status === "Completed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {checklist.status === "Completed" ? "完了" : "進行中"}
                         </span>
                       </div>
                     </div>
@@ -217,22 +229,21 @@ const HonePage = () => {
             <div>
               <h2 className="text-lg font-bold mb-4">クイックアクション</h2>
               <div className="grid grid-cols-2 gap-4">
-                <button className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600">
-                  <PlusIcon />
+                <Link href="/checklists/new" className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600">
+                <PlusIcon />
                   <span>新規チェックリスト</span>
-                </button>
-                <button className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600">
+                </Link>
+                <Link href="/archive" className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600">
                   <ArchiveIcon />
                   <span>アーカイブ一覧</span>
-                </button>
+                </Link>
               </div>
             </div>
           </div>
         )}
       </main>
-
     </div>
   );
 };
 
-export default HonePage;
+export default HomePage;

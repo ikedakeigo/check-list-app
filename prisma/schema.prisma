@@ -38,7 +38,7 @@ model CheckLists {
   id            Int             @id @default(autoincrement())
   name          String
   description   String?
-  status        Status          @default(Pending)
+  status        Status          @default(NotStarted)
   workDate      DateTime
   siteName      String
   isTemplate    Boolean         @default(false)
@@ -59,7 +59,7 @@ model CheckListItem {
   description String?
   unit        String?
   quantity    Int?
-  status      Status     @default(Pending)
+  status      Status     @default(NotStarted)
   completedAt DateTime?
   memo        String?
   createdAt   DateTime   @default(now())
@@ -83,4 +83,5 @@ model Categories {
 enum Status {
   Pending
   Completed
+  NotStarted
 }

@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useRouter, usePathname } from 'next/navigation';
-import React from 'react';
-import HomeIcon from '../icons/HomeIcon';
-import ChecklistIcon from '../icons/ChecklistIcon';
-import ArchiveIcon from '../icons/ArchiveIcon';
-import SettingsIcon from '../icons/SettingsIcon';
-
+import { useRouter, usePathname } from "next/navigation";
+import React from "react";
+import HomeIcon from "../icons/HomeIcon";
+import ChecklistIcon from "../icons/ChecklistIcon";
+import ArchiveIcon from "../icons/ArchiveIcon";
+import SettingsIcon from "../icons/SettingsIcon";
+import Link from "next/link";
 
 type FooterProps = {
   selectedFilter?: string;
@@ -22,42 +22,48 @@ const Footer: React.FC<FooterProps> = ({ selectedFilter, onFilterChange }) => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
       <div className="flex justify-around">
-        <button
-          onClick={() => router.push('/')}
-          className={`flex flex-col items-center py-2 px-4 ${isActive('/') ? 'text-blue-600' : 'text-gray-600'}`}
+        <Link
+          href="/"
+          className={`flex flex-col items-center py-2 px-4 ${
+            isActive("/") ? "text-blue-600" : "text-gray-600"
+          }`}
         >
           <HomeIcon />
           <span className="text-xs mt-1">ホーム</span>
-        </button>
-        <button
-          onClick={() => router.push('/checklists')}
-          className={`flex flex-col items-center py-2 px-4 ${isActive('/checklists') ? 'text-blue-600' : 'text-gray-600'}`}
+        </Link>
+        <Link
+          href="/checklists"
+          className={`flex flex-col items-center py-2 px-4 ${
+            isActive("/checklists") ? "text-blue-600" : "text-gray-600"
+          }`}
         >
           <ChecklistIcon />
           <span className="text-xs mt-1">チェック</span>
-        </button>
+        </Link>
         <button
           onClick={() => {
             if (onFilterChange) {
-              onFilterChange('archived');
+              onFilterChange("archived");
             } else {
-              router.push('/checklists?filter=archived');
+              router.push("/checklists?filter=archived");
             }
           }}
           className={`flex flex-col items-center py-2 px-4 ${
-            selectedFilter === 'archived' ? 'text-blue-600' : 'text-gray-600'
+            selectedFilter === "archived" ? "text-blue-600" : "text-gray-600"
           }`}
         >
           <ArchiveIcon />
           <span className="text-xs mt-1">アーカイブ</span>
         </button>
-        <button
-          onClick={() => router.push('/settings')}
-          className={`flex flex-col items-center py-2 px-4 ${isActive('/settings') ? 'text-blue-600' : 'text-gray-600'}`}
+        <Link
+          href="/settings"
+          className={`flex flex-col items-center py-2 px-4 ${
+            isActive("/settings") ? "text-blue-600" : "text-gray-600"
+          }`}
         >
           <SettingsIcon />
           <span className="text-xs mt-1">設定</span>
-        </button>
+        </Link>
       </div>
     </nav>
   );

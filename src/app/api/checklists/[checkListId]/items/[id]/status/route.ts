@@ -8,56 +8,55 @@ const prisma = new PrismaClient();
 // チェックアイテムのステータス更新
 export const PATCH = async (
   req: NextRequest,
-  { params }: { params: { checkListId: string, id: string } }
+  { params }: { params: { checkListId: string; id: string } }
 ) => {
 
   // フロントエンドから送られてきたtokenより
   // ログインされたユーザーか判断する
-  const token = req.headers.get('Authorization') ?? ''
+  const token = req.headers.get("Authorization") ?? "";
   // supabaseに対してtokenを送る
-  const { error, data } = await supabase.auth.getUser(token)
+  const { error, data } = await supabase.auth.getUser(token);
 
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
-  if( error ) {
-    return NextResponse.json(
-      { status: error.message},
-      { status: 400 }
-    )
+  if (error || !data.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (error || !data.user ) {
-    throw new Error('ユーザーは登録されていません。')
-  }
-
-  const supabaseUserId = data.user.id
+  const supabaseUserId = data.user.id;
+  const body: UpdateCheckListItemStatus = await req.json();
+  const { status } = body;
 
   try {
-    const body: UpdateCheckListItemStatus = await req.json();
-    const { status } = body;
-
-    /**
-     * prismaではネストされたオブジェクトを直接指定することができない
-     * updateの代わりにupdateManyを採用
-     * userオブジェクトのsupabaseUserIdを参照することができる
-     */
-    const item = await prisma.checkListItem.updateMany({
+    // 所有者をチェックする
+    const existingItem = await prisma.checkListItem.findFirst({
       where: {
         id: parseInt(params.id),
         checkListId: parseInt(params.checkListId),
-        user: { supabaseUserId }
+        user: { supabaseUserId },
       },
-      data: {
-        status,
-        completedAt: status === 'Completed' ? new Date() : null
+      include: {
+        category: true,
       }
     })
 
-    return NextResponse.json(item, { status: 200 })
+    if (!existingItem) {
+      return NextResponse.json({ error: "対象アイテムが見つからないか、アクセス権がありません。" }, { status: 404 });
+    }
+
+    // 更新
+    const updatedItem = await prisma.checkListItem.update({
+      where: {
+        id: parseInt(params.id),
+      },
+      data: {
+        status,
+        completedAt: status === "Completed" ? new Date() : null,
+      },
+    })
+
+    return NextResponse.json({ ...updatedItem, category: existingItem.category }, { status: 200 });
   } catch (error) {
-    console.error('Error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error("Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}
+};
