@@ -2,12 +2,13 @@
 
 import useAuthCheck from "@/app/_hooks/useAuthCheck";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
-import { AddCategory, CategoryRequestBody } from "@/app/_types/category";
-import { ChecklistStatus, NewItem } from "@/app/_types/checkListItems";
+import { AddCategory } from "@/app/_types/category";
+import { ChecklistStatus, ItemsRes, NewItem } from "@/app/_types/checkListItems";
+import { ChecklistFormData } from "@/app/_types/checklists";
 import { FormInputs } from "@/app/_types/formProps";
 import ChecklistForm from "@/components/form/ChecklistForm";
 import { useParams, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 
 const NewChecklistPage = () => {
@@ -18,15 +19,26 @@ const NewChecklistPage = () => {
 
   const { token } = useSupabaseSession();
 
-    const methods = useForm<FormInputs>({
-      defaultValues: {
-        name: "",
-        description: "",
-        workDate: new Date().toISOString().split("T")[0],
-        siteName: "",
-        isTemplate: false,
-      },
-    });
+  // todo 更新関数のみを使用している現状だったので、完全に不要なので削除
+  // const [, setUser] = useState<User | null>(null);
+
+  const methods = useForm<FormInputs>({
+    defaultValues: {
+      name: "",
+      description: "",
+      workDate: new Date().toISOString().split("T")[0],
+      siteName: "",
+      isTemplate: false,
+    },
+  });
+
+  // const [formData, setFormData] = useState<ChecklistFormData>({
+  //   name: "",
+  //   description: "",
+  //   siteName: "",
+  //   workDate: new Date().toISOString().split("T")[0], // 今日の日付
+  //   isTemplate: false,
+  // });
 
   // カテゴリー関連の状態
   const [categories, setCategories] = useState<AddCategory>([]);
@@ -34,8 +46,18 @@ const NewChecklistPage = () => {
   // 選択中のカテゴリーID
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
+  // アイテムの初期値を関数で定義
+  const initialNewItem: NewItem = {
+    name: "",
+    quantity: "",
+    unit: "",
+    categoryId: null,
+    categoryName: "",
+    status: ChecklistStatus.NotStarted,
+  };
+
   // アイテム管理の状態
-  const [items, setItems] = useState<NewItem[]>([]);
+  const [items, setItems] = useState<NewItem[]>([initialNewItem]);
 
   // 新しいアイテムの入力状態
   const [newItem, setNewItem] = useState<NewItem>({
@@ -51,8 +73,75 @@ const NewChecklistPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const fetchChecklist = useCallback(async () => {
+    if (!token) return;
+    // チェックリストの詳細を取得
+    try {
+      const [checkListRes, itemsRes] = await Promise.all([
+        fetch(`/api/checklists/${id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token,
+          },
+        }),
+        fetch(`/api/checklists/${id}/items`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token,
+          },
+        }),
+      ]);
+
+      if (!checkListRes.ok) throw new Error("チェックリストの取得に失敗しました");
+      if (!itemsRes.ok) throw new Error("アイテムの取得に失敗しました");
+
+      const [checkListData, itemsData]: [ChecklistFormData, ItemsRes] = await Promise.all([
+        checkListRes.json(),
+        itemsRes.json(),
+      ]);
+
+      // setFormData({
+      //   name: checkListData.name || "",
+      //   description: checkListData.description || "",
+      //   siteName: checkListData.siteName || "",
+      //   workDate: checkListData.workDate ? new Date(checkListData.workDate).toISOString().split("T")[0] : "",
+      //   isTemplate: checkListData.isTemplate || false,
+      // });
+
+      // アイテムをセット
+      const formattedItems = itemsData.map((item) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity ? item.quantity.toString() : "",
+        unit: item.unit || "",
+        categoryId: item.categoryId,
+        categoryName: item.category.name,
+        status: item.status,
+      }));
+
+      setItems(formattedItems);
+      setSelectedCategoryId(formattedItems[0]?.categoryId || null); // 最初のアイテムのカテゴリーIDを選択
+
+      methods.reset({
+        name: checkListData.name,
+        description: checkListData.description,
+        siteName: checkListData.siteName,
+        workDate: new Date(checkListData.workDate).toISOString().split("T")[0],
+        isTemplate: checkListData.isTemplate,
+      });
+    } catch (error) {
+      console.error("エラーが発生しました", error);
+      setError("カテゴリーの取得に失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  }, [token, id]);
+
   useEffect(() => {
-    if (!useAuth || !token) return; // ← tokenが無いなら実行しない
+    // tokenがない場合は何もしない
+    if (!useAuth || !token) return;
+    fetchChecklist();
+    setLoading(true);
   }, [useAuth, token]);
 
   // アイテムをリストに追加する関数
@@ -78,16 +167,6 @@ const NewChecklistPage = () => {
     // ...prevには既存のアイテムが入っている
     setItems((prev) => [...prev, item]);
 
-    // 入力値をクリア
-    setNewItem({
-      name: "",
-      quantity: "",
-      unit: "",
-      categoryId: null,
-      categoryName: "",
-      status: ChecklistStatus.NotStarted,
-    });
-
     setError(null);
   };
 
@@ -101,6 +180,8 @@ const NewChecklistPage = () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
+
+    console.log("送信データ", data.name);
 
     try {
       if (id) {
@@ -125,6 +206,7 @@ const NewChecklistPage = () => {
             workDate: data.workDate,
             siteName: data.siteName,
             isTemplate: data.isTemplate,
+            status: data,
           }),
         });
 
@@ -149,7 +231,7 @@ const NewChecklistPage = () => {
                 quantity: item.quantity ? parseInt(item.quantity) : null,
                 unit: item.unit,
                 categoryId: item.categoryId,
-                status: "NotStarted",
+                status: item.status,
               }),
             });
           })
@@ -226,25 +308,26 @@ const NewChecklistPage = () => {
 
   return (
     <FormProvider {...methods}>
-    <ChecklistForm
-      categories={categories}
-      setCategories={setCategories}
-      selectedCategoryId={selectedCategoryId}
-      setSelectedCategoryId={setSelectedCategoryId}
-      items={items}
-      newItem={newItem}
-      setNewItem={setNewItem}
-      handleAddItem={handleAddItem}
-      handleRemoveItem={handleRemoveItem}
-      onSubmit={onSubmit}
-      loading={loading}
-      setLoading={setLoading}
-      error={error}
-      setError={setError}
-      success={success}
-      isEdit={false}
-      token={token}
-    />
+      <ChecklistForm
+        // formData={formData}
+        categories={categories}
+        setCategories={setCategories}
+        items={items}
+        newItem={newItem}
+        setNewItem={setNewItem}
+        selectedCategoryId={selectedCategoryId}
+        setSelectedCategoryId={setSelectedCategoryId}
+        handleAddItem={handleAddItem}
+        handleRemoveItem={handleRemoveItem}
+        onSubmit={onSubmit}
+        loading={loading}
+        setLoading={setLoading}
+        error={error}
+        success={success}
+        isEdit={true}
+        token={token}
+        setError={setError}
+      />
     </FormProvider>
   );
 };

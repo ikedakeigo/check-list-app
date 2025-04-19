@@ -26,29 +26,34 @@ const ChecklistDetailPage = () => {
       try {
         setLoading(true);
 
-        // チェックリスト詳細を取得
-        const checklistRes = await fetch(`/api/checklists/${id}`, {
-          headers: {
-            Authorization: token,
-          },
-        });
+        const [checklistRes, itemsRes] = await Promise.all([
+          // チェックリストの詳細を取得
+          fetch(`/api/checklists/${id}`, {
+            headers: {
+              Authorization: token,
+            }
+          }),
+
+          // チェックリストのアイテムを取得
+          fetch(`/api/checklists/${id}/items`, {
+            headers: {
+              Authorization: token,
+            },
+          })
+        ])
 
         if (!checklistRes.ok) throw new Error("チェックリストの取得に失敗しました");
-
-        const checklistData = await checklistRes.json();
-        setChecklist(checklistData);
-
-        // チェックリストのアイテムを取得
-        const itemsRes = await fetch(`/api/checklists/${id}/items`, {
-          headers: {
-            Authorization: token,
-          },
-        });
-
         if (!itemsRes.ok) throw new Error("チェックリストのアイテムの取得に失敗しました");
 
-        const itemsData = await itemsRes.json();
+        const [checklistData, itemsData] = await Promise.all([
+          checklistRes.json(),
+          itemsRes.json()
+        ])
 
+        console.log("checklistData", checklistData);
+        console.log("itemsData", itemsData);
+
+        setChecklist(checklistData);
         setItems(itemsData);
 
         // カテゴリごとにアイテムをグループ化
@@ -84,6 +89,33 @@ const ChecklistDetailPage = () => {
     }
   }, [id, token]);
 
+  // チェックリストを削除する
+  const handleDeleteChecklist = async () => {
+    if (!confirm("このチェックリストを削除しますか？この操作は元に戻せません。")) return;
+
+    try {
+      if (!token) return;
+
+      const res = await fetch(`/api/checklists/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: token,
+        },
+      });
+
+      if (!res.ok) throw new Error("チェックリストの削除に失敗しました");
+
+      alert("チェックリストを削除しました");
+      router.push("/checklists");
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("チェックリストの削除に失敗しました");
+      }
+    }
+  };
+
   // アイテムのステータス更新ロジック
   const updateItemStatusInState = (updatedItem: CheckListItem) => {
     // 全体アイテム更新
@@ -100,7 +132,6 @@ const ChecklistDetailPage = () => {
       return newGroupedItems;
     });
   };
-
 
   // アイテムのステータスを更新
   const handleItemsStatusChange = async (itemId: number, newStatus: "Pending" | "Completed") => {
@@ -129,14 +160,7 @@ const ChecklistDetailPage = () => {
         item.id === itemId ? { ...item, status: newStatus } : item
       );
 
-      await handleChecklistStatusUpdate(
-        updatedItems,
-        checklist,
-        setChecklist,
-        token,
-        Number(id)
-      )
-
+      await handleChecklistStatusUpdate(updatedItems, checklist, setChecklist, token, Number(id));
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -209,8 +233,7 @@ const ChecklistDetailPage = () => {
         setChecklist,
         token,
         Number(id) // パラメータで取得したidを使用、数値型に変換
-      )
-
+      );
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -257,6 +280,26 @@ const ChecklistDetailPage = () => {
   const totalItems = items.length;
   const progressPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
+  const getStatusColor = (status: string | undefined) => {
+    switch (status) {
+      case "Completed":
+        return {
+          style: "bg-green-100 text-green-800",
+          label: "完了",
+        };
+      case "Pending":
+        return {
+          style: "bg-blue-100 text-blue-800",
+          label: "進行中",
+        };
+      default:
+        return {
+          style: "bg-gray-100 text-gray-800",
+          label: "未着手",
+        };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
@@ -297,6 +340,21 @@ const ChecklistDetailPage = () => {
                 />
               </svg>
             </button>
+
+            <button
+              onClick={handleDeleteChecklist}
+              className="flex items-center p-2 bg-red-500 bg-opacity-90 rounded-lg"
+            >
+              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+              <span className="hidden sm:inline">削除</span>
+            </button>
           </div>
         </div>
       </header>
@@ -316,29 +374,31 @@ const ChecklistDetailPage = () => {
               <div>
                 <span className="text-gray-500">日付: </span>
                 {checklist?.workDate && (
-                  <span>{new Date(checklist.workDate).toLocaleDateString()}</span>
+                  <span className="text-gray-900">
+                    {new Date(checklist.workDate).toLocaleDateString()}
+                  </span>
                 )}
               </div>
               <div>
                 <span className="text-gray-500">現場名: </span>
-                <span>{checklist?.siteName}</span>
+                <span className="text-gray-900">{checklist?.siteName}</span>
               </div>
               <div>
                 <span className="text-gray-500">ステータス: </span>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs ${
-                    checklist?.status === "Completed"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-blue-100 text-blue-800"
-                  }`}
+                  className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
+                    checklist?.status
+                  ).style}`}
                 >
-                  {checklist?.status === "Completed" ? "完了" : "進行中"}
+                  {getStatusColor(checklist?.status).label}
                 </span>
               </div>
               <div>
                 <span className="text-gray-500">作成日: </span>
                 {checklist?.createdAt && (
-                  <span>{new Date(checklist.createdAt).toLocaleDateString()}</span>
+                  <span className="text-gray-900">
+                    {new Date(checklist.createdAt).toLocaleDateString()}
+                  </span>
                 )}
               </div>
             </div>
@@ -389,7 +449,6 @@ const ChecklistDetailPage = () => {
                           }`}
                         >
                           {item.name}
-                          {item.id}
                         </h4>
                         {item.quantity && item.unit && (
                           <span className="text-sm text-gray-500">

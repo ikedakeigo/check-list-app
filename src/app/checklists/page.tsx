@@ -5,15 +5,9 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import PlusIcon from "@/components/icons/PlusIcon";
 import BackIcon from "@/components/icons/BackIcon";
-import { CheckLists } from "@prisma/client";
 import useAuthCheck from "../_hooks/useAuthCheck";
 import Link from "next/link";
-
-// 拡張したチェックリスト型
-interface CheckListWithItems extends CheckLists {
-  totalItems: number;
-  completedItems: number;
-}
+import { CheckListWithItems } from "../_types/checklists";
 
 const ChecklistsPage = () => {
   const router = useRouter();
@@ -73,9 +67,6 @@ const ChecklistsPage = () => {
     { id: "templates", label: "テンプレート" },
     { id: "archived", label: "アーカイブ" },
   ];
-
-
-  console.log("checklists------>", checklists);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -153,7 +144,7 @@ const ChecklistsPage = () => {
                 onClick={() => handleViewChecklist(checklist.id)}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-lg">{checklist.name}</h3>
+                  <h3 className="font-medium text-lg text-gray-900">{checklist.name}</h3>
                   <span
                     className={`px-2 py-1 rounded-full text-xs ${
                       checklist.status === "Completed"

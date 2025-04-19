@@ -1,9 +1,9 @@
 import { CheckListItem } from "@prisma/client";
-import { FeatchCategory } from "./category";
 
 export enum ChecklistStatus {
+  NotStarted = "NotStarted",
   Pending = "Pending",
-  Completed = "Completed"
+  Completed = "Completed",
 }
 
 export type CheckListItemsRequestBody = {
@@ -14,7 +14,7 @@ export type CheckListItemsRequestBody = {
   unit?: string;
   memo?: string;
   status: ChecklistStatus;
-}
+};
 
 export type TodaysCheckList = {
   id: number;
@@ -23,7 +23,7 @@ export type TodaysCheckList = {
   workDate: string;
   completedItems: number;
   totalItems: number;
-}[]
+}[];
 
 export type RecentCheckList = {
   id: number;
@@ -31,19 +31,18 @@ export type RecentCheckList = {
   createdAt: string;
   siteName: string;
   status: ChecklistStatus;
-}[]
+}[];
 
 /**
  * Partial<T>を使用してコードの省略
  */
 export type UpdateCheckListItems = Partial<CheckListItemsRequestBody> & {
-  status: ChecklistStatus
-}
+  status: ChecklistStatus;
+};
 
 export type UpdateCheckListItemStatus = {
-  status: ChecklistStatus
-}
-
+  status: ChecklistStatus;
+};
 
 export type NewItem = {
   name: string;
@@ -51,7 +50,8 @@ export type NewItem = {
   unit: string;
   categoryId: number | null;
   categoryName: string;
-}
+  status: ChecklistStatus;
+};
 
 export type GroupedItemsType = {
   [categoryName: string]: CheckListItem[];
@@ -61,3 +61,16 @@ export type UpdateCheckListItemsStatusRequest = {
   status: "Completed" | "Pending";
   itemIds: number[];
 };
+
+export type ItemsRes = {
+  id: number;
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  categoryId: number;
+  category: {
+    id: number;
+    name: string;
+  };
+  status: ChecklistStatus;
+}[];
