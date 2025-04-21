@@ -2,7 +2,7 @@
 
 import useAuthCheck from "@/app/_hooks/useAuthCheck";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
-import { AddCategory, CategoryRequestBody } from "@/app/_types/category";
+import { AddCategory } from "@/app/_types/category";
 import { ChecklistStatus, NewItem } from "@/app/_types/checkListItems";
 import { FormInputs } from "@/app/_types/formProps";
 import ChecklistForm from "@/components/form/ChecklistForm";

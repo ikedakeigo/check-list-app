@@ -1,5 +1,3 @@
-import { CheckListItem } from "@prisma/client";
-
 export enum ChecklistStatus {
   NotStarted = "NotStarted",
   Pending = "Pending",
@@ -57,6 +55,8 @@ export type GroupedItemsType = {
   [categoryName: string]: CheckListItem[];
 };
 
+export type Grouped = Record<string, CheckListItem[]>;
+
 export type UpdateCheckListItemsStatusRequest = {
   status: "Completed" | "Pending";
   itemIds: number[];
@@ -74,3 +74,37 @@ export type ItemsRes = {
   };
   status: ChecklistStatus;
 }[];
+
+
+// todo 修正が必要
+
+// カテゴリー型
+export type Category = {
+  id: number;
+  name: string;
+  description: string | null;
+  displayOrder: number;
+  createdAt: string; // ISO文字列形式
+  updatedAt: string;
+};
+
+// チェックリストアイテム型（1件分）
+export type CheckListItem = {
+  id: number;
+  checkListId: number;
+  categoryId: number;
+  name: string;
+  description: string | null;
+  unit: string;
+  quantity: number;
+  status: "NotStarted" | "InProgress" | "Completed"; // 状態が決まっていればUnion型にする
+  completedAt: string | null;
+  memo: string | null;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  category: Category;
+};
+
+// チェックリストアイテムの配列型
+export type ItemsData = CheckListItem[];

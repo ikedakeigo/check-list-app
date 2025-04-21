@@ -1,9 +1,9 @@
 "use client";
 
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
-import { GroupedItemsType } from "@/app/_types/checkListItems";
+// import { GroupedItemsType } from "@/app/_types/checkListItems";
 import { handleChecklistStatusUpdate } from "@/app/utils/handleChecklistStatusUpdate";
-import { CheckListItem, CheckLists } from "@prisma/client";
+import { CheckListItem, CheckLists, Prisma } from "@prisma/client";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -12,10 +12,10 @@ const ChecklistDetailPage = () => {
   const { id, checkListId } = useParams();
   const router = useRouter();
   const { token } = useSupabaseSession();
-
+  type Grouped = Record<string, CheckListItem[]>;
   const [checklist, setChecklist] = useState<CheckLists | null>(null);
   const [items, setItems] = useState<CheckListItem[]>([]);
-  const [groupedItems, setGroupedItems] = useState<GroupedItemsType>({});
+  const [groupedItems, setGroupedItems] = useState<Grouped>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,8 +61,15 @@ const ChecklistDetailPage = () => {
          * Record<キーの型, 値の型>
          * キーがカテゴリー名、値がアイテムの配列
          */
+
+        // Prismaが返す「categoryを含む」アイテムの型
+type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
+  include: { category: true };
+}>;
+
+
         const grouped: Record<string, CheckListItem[]> = {};
-        itemsData.forEach((item: any) => {
+        itemsData.forEach((item: CheckListItemWithCategory) => {
           const categoryName = item.category.name;
           // カテゴリー名がキーに存在しない場合は新しく配列を作成
           if (!grouped[categoryName]) {
@@ -71,6 +78,7 @@ const ChecklistDetailPage = () => {
           // カテゴリー名をキーにアイテムを追加
           grouped[categoryName].push(item);
         });
+
 
         setGroupedItems(grouped);
       } catch (error) {
