@@ -135,14 +135,14 @@ const NewChecklistPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, id]);
+  }, [token, id, methods]);
 
   useEffect(() => {
     // tokenがない場合は何もしない
     if (!useAuth || !token) return;
     fetchChecklist();
     setLoading(true);
-  }, [useAuth, token]);
+  }, [useAuth, token, fetchChecklist]);
 
   // アイテムをリストに追加する関数
   const handleAddItem = () => {
