@@ -5,24 +5,24 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-export const GET = async (_req: NextRequest, { params }: { params: { id: string } }) => {
-  try {
-    const category = await prisma.categories.findUnique({
-      where: {
-        id: parseInt(params.id),
-      },
-    });
+// export const GET = async (_req: NextRequest, { params }: { params: { id: string } }) => {
+//   try {
+//     const category = await prisma.categories.findUnique({
+//       where: {
+//         id: parseInt(params.id),
+//       },
+//     });
 
-    if (!category) {
-      return NextResponse.json({ error: "カテゴリーが見つかりません" }, { status: 404 });
-    }
+//     if (!category) {
+//       return NextResponse.json({ error: "カテゴリーが見つかりません" }, { status: 404 });
+//     }
 
-    return NextResponse.json(category, { status: 200 });
-  } catch (error) {
-    console.error("GET Error", error);
-    return NextResponse.json({ error: "サーバーエラー" }, { status: 500 });
-  }
-};
+//     return NextResponse.json(category, { status: 200 });
+//   } catch (error) {
+//     console.error("GET Error", error);
+//     return NextResponse.json({ error: "サーバーエラー" }, { status: 500 });
+//   }
+// };
 
 
 // カテゴリー更新
