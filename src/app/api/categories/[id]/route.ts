@@ -1,6 +1,3 @@
-export const dynamic = "force-dynamic";
-
-
 import {  UpsertCategoryRequestBody } from "@/app/_types/category";
 import { supabase } from "@/lib/supabase";
 import { PrismaClient } from "@prisma/client";
