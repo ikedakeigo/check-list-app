@@ -17,75 +17,165 @@ const HomePage = () => {
   const [todayChecklists, setTodayChecklists] = useState<TodaysCheckList>([]);
   const [recentChecklists, setResentChecklists] = useState<RecentCheckList>([]);
   const [notifications, setNotifications] = useState<NotificationRequestBody[]>([]);
+  const [completedTaskCount, setCompletedTaskCount] = useState(0);
+  const [totalTaskCount, setTotalTaskCount] = useState(0);
 
   const authUser = useAuthCheck();
 
   // データ取得
-  const fetchData = async (userId: string) => {
+  const fetchData = async (supabaseUserId: string) => {
     try {
       setLoading(true);
-      // 今日のチェックリストを取得
-      const tody = new Date();
-      tody.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(tody);
+
+      console.log("Supabase認証ユーザーID:", supabaseUserId);
+
+      // UserテーブルからユーザーのIDを取得
+      const { data: userData, error: userError } = await supabase
+        .from("User")
+        .select("id")
+        .eq("supabaseUserId", supabaseUserId)
+        .single();
+
+      if (userError || !userData) {
+        console.error("ユーザーが見つかりません:", userError);
+        return;
+      }
+
+      const actualUserId = userData.id;
+
+      // 今日の日付範囲を設定
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
+      // 今日のチェックリストを取得
       const { data: todayData, error: todayError } = await supabase
         .from("CheckLists")
         .select("*")
-        .eq("userId", userId)
-        .gte("createdAt", tody.toISOString())
-        .lt("createdAt", tomorrow.toISOString())
+        .eq("userId", actualUserId)
+        .gte("workDate", today.toISOString())
+        .lt("workDate", tomorrow.toISOString())
         .is("archivedAt", null)
         .limit(5);
 
-      // エラーがあればコンソールに出力
       if (todayError) {
         console.error("Error fetching today checklists:", todayError);
+        setTodayChecklists([]);
+        return;
+      }
+
+      // 各チェックリストの項目数を計
+      if (todayData && todayData.length > 0) {
+        const checklistsWithStats = await Promise.all(
+          todayData.map(async (checklist) => {
+            // 各チェックリストの項目を取得
+            const { data: items, error: itemsError } = await supabase
+              .from("CheckListItem")
+              .select("status")
+              .eq("checkListId", checklist.id);
+
+            if (itemsError) {
+              console.error("Error fetching items for checklist:", checklist.id, itemsError);
+              return {
+                ...checklist,
+                totalItems: 0,
+                completedItems: 0,
+              };
+            }
+
+            const totalItems = items?.length || 0;
+            const completedItems = items?.filter((item) => item.status === "Completed").length || 0;
+
+            return {
+              ...checklist,
+              totalItems,
+              completedItems,
+            };
+          })
+        );
+
+        setTodayChecklists(checklistsWithStats);
+
+        // 全体の統計を計算
+        let totalCompleted = 0;
+        let totalAll = 0;
+        checklistsWithStats.forEach((item) => {
+          totalCompleted += item.completedItems;
+          totalAll += item.totalItems;
+        });
+
+        setCompletedTaskCount(totalCompleted);
+        setTotalTaskCount(totalAll);
       } else {
-        // 今日のチェックリストをセット
-        setTodayChecklists(todayData || []);
+        setTodayChecklists([]);
+        setCompletedTaskCount(0);
+        setTotalTaskCount(0);
       }
 
       // 最近のチェックリストを取得
       const { data: recentData, error: recentError } = await supabase
         .from("CheckLists")
         .select("*")
-        .eq("userId", userId)
+        .eq("userId", actualUserId)
         .is("archivedAt", null)
         .order("createdAt", { ascending: false })
         .limit(5);
 
-      if (recentError) {
-        console.error("Error fetching recent checklists:", recentError);
-      } else {
-        // 最近のチェックリストをセット
-        setResentChecklists(recentData || []);
+      if (!recentError && recentData) {
+        // 最近のチェックリストにも項目数を追加
+        const recentWithStats = await Promise.all(
+          recentData.map(async (checklist) => {
+            const { data: items } = await supabase
+              .from("CheckListItem")
+              .select("status")
+              .eq("checkListId", checklist.id);
+
+            const totalItems = items?.length || 0;
+            const completedItems = items?.filter((item) => item.status === "Completed").length || 0;
+
+            return {
+              ...checklist,
+              totalItems,
+              completedItems,
+            };
+          })
+        );
+
+        setResentChecklists(recentWithStats);
       }
 
       // 通知を取得
       const { data: notifData, error: notificationError } = await supabase
         .from("Notification")
         .select("*")
-        .eq("userId", userId)
+        .eq("userId", actualUserId)
         .order("createdAt", { ascending: false })
         .limit(3);
 
-      if (notificationError) {
-        console.error("Error fetching notifications:", notificationError);
-      } else {
+      if (!notificationError) {
         setNotifications(notifData || []);
       }
-
-      if (todayData) setTodayChecklists(todayData);
-      if (recentData) setResentChecklists(recentData);
-      if (notifData) setNotifications(notifData);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // useEffectも修正
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        fetchData(user.id); // Supabaseの認証ユーザーIDを渡す
+      }
+    };
+
+    getCurrentUser();
+  }, []);
 
   // 認証済みユーザーが取得できたらデータを取得
   useEffect(() => {
@@ -94,137 +184,151 @@ const HomePage = () => {
     }
   }, [authUser]);
 
-  // ダミーデータ
+  console.log("todayChecklists", todayChecklists);
+
   const stats = [
-    { label: "本日の現場", value: todayChecklists.length || 0 },
-    { label: "完了タスク", value: "5/12" },
-    { label: "未完了", value: "7" },
+    { label: "本日の現場", value: todayChecklists.length },
+    {
+      label: "完了タスク",
+      value: `${completedTaskCount}/${totalTaskCount || "?"}`,
+    },
+    {
+      label: "未完了",
+      value: totalTaskCount - completedTaskCount >= 0 ? totalTaskCount - completedTaskCount : "?",
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-        {/* ヘッダー */}
-        <Header
-          title="現場マネジ"
-          showNotification
-          notificationCount={notifications.length}
-          userName={user?.user_metadata?.name || user?.email}
-        />
+      {/* ヘッダー */}
+      <Header
+        title="現場マネジ"
+        showNotification
+        notificationCount={notifications.length}
+        userName={user?.user_metadata?.name || user?.email}
+      />
 
-        {/* メインコンテンツ */}
-        <main className="p-4 pb-24 flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      {/* メインコンテンツ */}
+      <main className="p-4 pb-24 flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* 統計カード */}
+            <div className="grid grid-cols-3 gap-4">
+              {stats.map((stat, index) => (
+                <div key={index} className="bg-white p-4 rounded-lg shadow-sm text-center">
+                  <div className="text-2xl font-bold text-blue-600">{stat.value}</div>
+                  <div className="text-sm text-gray-600">{stat.label}</div>
+                </div>
+              ))}
             </div>
-          ) : (
-            <div className="space-y-6">
-              {/* 統計カード */}
-              <div className="grid grid-cols-3 gap-4">
-                {stats.map((stat, index) => (
-                  <div key={index} className="bg-white p-4 rounded-lg shadow-sm text-center">
-                    <div className="text-2xl font-bold text-blue-600">{stat.value}</div>
-                    <div className="text-sm text-gray-600">{stat.label}</div>
+
+            {/* 今日の現場 */}
+            <div>
+              <h2 className="text-lg font-bold mb-4 text-black">今日の現場</h2>
+              <div className="space-y-3">
+                {todayChecklists.length > 0 ? (
+                  todayChecklists.map((checklist) => (
+                    <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-medium text-blue-600">{checklist.name}</h3>
+                        <span className="text-sm text-gray-500">
+                          {new Date(checklist.workDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{checklist.siteName}</p>
+                      <div className="flex items-center">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-green-500 h-2 rounded-full"
+                            style={{
+                              width: `${
+                                checklist.totalItems > 0
+                                  ? (checklist.completedItems / checklist.totalItems) * 100
+                                  : 0
+                              }%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="ml-4 text-sm text-gray-600">
+                          {checklist.completedItems}/{checklist.totalItems}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">
+                    今日の現場はありません
                   </div>
-                ))}
-              </div>
-
-              {/* 今日の現場 */}
-              <div>
-                <h2 className="text-lg font-bold mb-4 text-black">今日の現場</h2>
-                <div className="space-y-3">
-                  {todayChecklists.length > 0 ? (
-                    todayChecklists.map((checklist) => (
-                      <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium">{checklist.name}</h3>
-                          <span className="text-sm text-gray-500">
-                            {new Date(checklist.workDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{checklist.siteName}</p>
-                        <div className="flex items-center">
-                          <div className="flex-1 bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-green-500 h-2 rounded-full"
-                              style={{
-                                width: `${
-                                  ((checklist.completedItems || 0) / (checklist.totalItems || 1)) *
-                                  100
-                                }%`,
-                              }}
-                            ></div>
-                          </div>
-                          <span className="ml-4 text-sm text-gray-600">
-                            {checklist.completedItems || 0}/{checklist.totalItems || "?"}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">
-                      今日の現場はありません
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 最近のチェックリスト */}
-              <div>
-                <h2 className="text-lg font-bold mb-4 text-black">最近のチェックリスト</h2>
-                <div className="space-y-3">
-                  {recentChecklists.length > 0 ? (
-                    recentChecklists.map((checklist) => (
-                      <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium">{checklist.name}</h3>
-                          <span className="text-sm text-gray-500">
-                            {new Date(checklist.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {checklist.siteName || "現場名なし"}
-                        </p>
-                        {/* プログレスバーの代わりに */}
-                        <div className="flex justify-between text-sm">
-                          <span className="text-blue-600">詳細を見る</span>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              checklist.status === "Completed"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {checklist.status === "Completed" ? "完了" : "進行中"}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">
-                      チェックリストはまだありません
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* クイックアクション */}
-              <div>
-                <h2 className="text-lg font-bold mb-4 text-black">クイックアクション</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <Link href="/checklists/new" className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600">
-                    <PlusIcon />
-                    <span>新規チェックリスト</span>
-                  </Link>
-                  <Link href="/archive" className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600">
-                    <ArchiveIcon />
-                    <span>アーカイブ一覧</span>
-                  </Link>
-                </div>
+                )}
               </div>
             </div>
-          )}
-        </main>
+
+            {/* 最近のチェックリスト */}
+            <div>
+              <h2 className="text-lg font-bold mb-4 text-black">最近のチェックリスト</h2>
+              <div className="space-y-3">
+                {recentChecklists.length > 0 ? (
+                  recentChecklists.map((checklist) => (
+                    <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-medium text-blue-600">{checklist.name}</h3>
+                        <span className="text-sm text-gray-500">
+                          {new Date(checklist.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {checklist.siteName || "現場名なし"}
+                      </p>
+                      {/* プログレスバーの代わりに */}
+                      <div className="flex justify-between text-sm">
+                        {/* <span className="text-blue-600">詳細を見る</span> */}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            checklist.status === "Completed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {checklist.status === "Completed" ? "完了" : "進行中"}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">
+                    チェックリストはまだありません
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* クイックアクション */}
+            <div>
+              <h2 className="text-lg font-bold mb-4 text-black">クイックアクション</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <Link
+                  href="/checklists/new"
+                  className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600"
+                >
+                  <PlusIcon />
+                  <span>新規チェックリスト</span>
+                </Link>
+                <Link
+                  href="/archive"
+                  className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600"
+                >
+                  <ArchiveIcon />
+                  <span>アーカイブ一覧</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
