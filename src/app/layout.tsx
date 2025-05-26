@@ -16,6 +16,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon.png"></link>
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon512_rounded.png" />
+
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="theme-color" content="#b8e986" />
+      </head>
       <body className="min-h-screen bg-gray-50">
         <AuthProvider>
           <div className="mx-auto max-w-md bg-white min-h-screen flex flex-col shadow-lg">
