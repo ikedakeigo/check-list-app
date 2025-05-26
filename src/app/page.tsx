@@ -232,7 +232,11 @@ const HomePage = () => {
               <div className="space-y-3">
                 {todayChecklists.length > 0 ? (
                   todayChecklists.map((checklist) => (
-                    <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
+                    <Link
+                      href={`/checklists/${checklist.id}`}
+                      key={checklist.id}
+                      className="block bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 mb-3"
+                    >
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium text-blue-600">{checklist.name}</h3>
                         <span className="text-sm text-gray-500">
@@ -257,7 +261,7 @@ const HomePage = () => {
                           {checklist.completedItems}/{checklist.totalItems}
                         </span>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 ) : (
                   <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">
@@ -273,7 +277,11 @@ const HomePage = () => {
               <div className="space-y-3">
                 {recentChecklists.length > 0 ? (
                   recentChecklists.map((checklist) => (
-                    <div key={checklist.id} className="bg-white p-4 rounded-lg shadow-sm">
+                    <Link
+                      href={`/checklists/${checklist.id}`}
+                      key={checklist.id}
+                      className="block bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 mb-3"
+                    >
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium text-blue-600">{checklist.name}</h3>
                         <span className="text-sm text-gray-500">
@@ -296,7 +304,7 @@ const HomePage = () => {
                           {checklist.status === "Completed" ? "完了" : "進行中"}
                         </span>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 ) : (
                   <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">
