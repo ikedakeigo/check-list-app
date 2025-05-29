@@ -96,7 +96,6 @@ export default function ChecklistForm({
             <h1 className="text-xl font-bold">チェックリスト編集</h1>
             <div className="flex space-x-2">
               <button
-                // onClick={handleSubmit}
                 onClick={handleSubmit(onSubmit)}
                 disabled={loading}
                 className="px-4 py-2 bg-white bg-opacity-20 rounded-lg text-sm disabled:opacity-50"
