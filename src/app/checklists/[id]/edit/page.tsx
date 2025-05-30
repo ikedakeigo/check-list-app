@@ -206,7 +206,6 @@ const NewChecklistPage = () => {
             workDate: data.workDate,
             siteName: data.siteName,
             isTemplate: data.isTemplate,
-            status: data,
           }),
         });
 
