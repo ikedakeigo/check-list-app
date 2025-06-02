@@ -31,7 +31,7 @@ const ChecklistDetailPage = () => {
           fetch(`/api/checklists/${id}`, {
             headers: {
               Authorization: token,
-            }
+            },
           }),
 
           // チェックリストのアイテムを取得
@@ -39,16 +39,16 @@ const ChecklistDetailPage = () => {
             headers: {
               Authorization: token,
             },
-          })
-        ])
+          }),
+        ]);
 
         if (!checklistRes.ok) throw new Error("チェックリストの取得に失敗しました");
         if (!itemsRes.ok) throw new Error("チェックリストのアイテムの取得に失敗しました");
 
         const [checklistData, itemsData] = await Promise.all([
           checklistRes.json(),
-          itemsRes.json()
-        ])
+          itemsRes.json(),
+        ]);
 
         console.log("checklistData", checklistData);
         console.log("itemsData", itemsData);
@@ -63,10 +63,9 @@ const ChecklistDetailPage = () => {
          */
 
         // Prismaが返す「categoryを含む」アイテムの型
-type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
-  include: { category: true };
-}>;
-
+        type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
+          include: { category: true };
+        }>;
 
         const grouped: Record<string, CheckListItem[]> = {};
         itemsData.forEach((item: CheckListItemWithCategory) => {
@@ -78,7 +77,6 @@ type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
           // カテゴリー名をキーにアイテムを追加
           grouped[categoryName].push(item);
         });
-
 
         setGroupedItems(grouped);
       } catch (error) {
@@ -394,9 +392,9 @@ type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
               <div>
                 <span className="text-gray-500">ステータス: </span>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                    checklist?.status
-                  ).style}`}
+                  className={`px-2 py-1 rounded-full text-xs ${
+                    getStatusColor(checklist?.status).style
+                  }`}
                 >
                   {getStatusColor(checklist?.status).label}
                 </span>
