@@ -153,7 +153,8 @@ const ChecklistsPage = () => {
                         ? "bg-purple-100 text-purple-800"
                         : checklist.archivedAt
                         ? "bg-gray-100 text-gray-800"
-                        : "bg-blue-100 text-blue-800"
+                        : checklist.status === "Pending"
+                        ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"
                     }`}
                   >
                     {checklist.status === "Completed"
@@ -162,7 +163,9 @@ const ChecklistsPage = () => {
                       ? "テンプレート"
                       : checklist.archivedAt
                       ? "アーカイブ"
-                      : "進行中"}
+                      : checklist.status === "Pending"
+                      ? "進行中" : "未着手"
+                      }
                   </span>
                 </div>
                 <div className="text-sm text-gray-500 mb-3">
