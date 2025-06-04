@@ -184,8 +184,6 @@ const HomePage = () => {
     }
   }, [authUser]);
 
-  console.log("todayChecklists", todayChecklists);
-
   const stats = [
     { label: "本日の現場", value: todayChecklists.length },
     {
@@ -298,10 +296,24 @@ const HomePage = () => {
                           className={`px-2 py-1 rounded-full text-xs ${
                             checklist.status === "Completed"
                               ? "bg-green-100 text-green-800"
-                              : "bg-blue-100 text-blue-800"
+                              : checklist.isTemplate
+                              ? "bg-purple-100 text-purple-800"
+                              : checklist.archivedAt
+                              ? "bg-gray-100 text-gray-800"
+                              : checklist.status === "Pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
                           }`}
                         >
-                          {checklist.status === "Completed" ? "完了" : "進行中"}
+                          {checklist.status === "Completed"
+                            ? "完了"
+                            : checklist.isTemplate
+                            ? "テンプレート"
+                            : checklist.archivedAt
+                            ? "アーカイブ"
+                            : checklist.status === "Pending"
+                            ? "進行中"
+                            : "未着手"}
                         </span>
                       </div>
                     </Link>
