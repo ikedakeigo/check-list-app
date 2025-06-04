@@ -5,7 +5,7 @@ import PlusIcon from "../icons/PlusIcon";
 
 import { useFormContext } from "react-hook-form";
 import { FormInputs, formProps } from "@/app/_types/formProps";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function ChecklistForm({
   categories,
@@ -36,8 +36,22 @@ export default function ChecklistForm({
     formState: { errors },
     reset,
     resetField,
-    getValues
+    getValues,
   } = useFormContext<FormInputs>();
+
+  // タッチ状態を管理
+  const [touched, setTouched] = useState({
+    category: false,
+    itemName: false,
+    quantity: false,
+  });
+
+  // バリデーション状態を計算
+  const hasErrors = {
+    category: touched.category && !selectedCategoryId,
+    itemName: touched.itemName && !newItem.name?.trim(),
+    quantity: touched.quantity && (!newItem.quantity || Number(newItem.quantity) <= 0),
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -56,10 +70,6 @@ export default function ChecklistForm({
 
         const data = await res.json();
         setCategories(data);
-
-        if (data.length > 0 && !selectedCategoryId) {
-          setSelectedCategoryId(data[0].id);
-        }
       } catch (err) {
         console.error("カテゴリー取得エラー", err);
         setError("カテゴリーの取得に失敗しました");
@@ -73,7 +83,12 @@ export default function ChecklistForm({
   }, [token, reset, setCategories, setSelectedCategoryId]);
 
   console.log("初期データ", getValues); // 値があるか確認
-  const isAddDisabled = !newItem.name.trim() || !newItem.quantity || !selectedCategoryId;
+  const isAddDisabled =
+    !newItem.name?.trim() ||
+    !newItem.quantity ||
+    Number(newItem.quantity) <= 0 ||
+    isNaN(Number(newItem.quantity)) ||
+    !selectedCategoryId;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -313,17 +328,21 @@ export default function ChecklistForm({
                 </label>
                 <select
                   id="category"
-                  {...register("selectedCategoryId", {
-                    // required: isEdit ? false : "カテゴリーを選択してください",
-                    onChange: (e) => {
-                      setSelectedCategoryId(Number(e.target.value));
-                    },
-                  })}
-                  defaultValue=""
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
+                  value={selectedCategoryId || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const categoryId = value ? Number(value) : null;
+                    setSelectedCategoryId(categoryId);
+                  }}
+                  onBlur={() => setTouched((prev) => ({ ...prev, category: true }))} // タッチ状態を更新
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 text-black ${
+                    hasErrors.category
+                      ? "border-red-500 bg-red-50 focus:ring-red-500"
+                      : "border-gray-300 focus:ring-blue-500"
+                  }`}
                 >
                   <option value="" disabled>
-                    カテゴリーを選択
+                    カテゴリーを選択してください
                   </option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
@@ -331,8 +350,8 @@ export default function ChecklistForm({
                     </option>
                   ))}
                 </select>
-                {errors.category && (
-                  <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>
+                {hasErrors.category && (
+                  <p className="mt-1 text-sm text-red-600">カテゴリーを選択してください</p>
                 )}
               </div>
 
@@ -343,53 +362,53 @@ export default function ChecklistForm({
                 </label>
                 <input
                   type="text"
-                  {...register("newItem.name", {
-                    // required: isEdit ? false : "アイテム名は必須です",
-                    maxLength: {
-                      value: 10,
-                      message: "アイテム名は10文字以内で入力してください",
-                    },
-                    onChange: (e) => {
-                      setNewItem((prev) => ({ ...prev, name: e.target.value }));
-                    },
-                  })}
-                  // onChange={handleNewItemChange}
+                  value={newItem.name || ""}
+                  onChange={(e) => {
+                    setNewItem((prev) => ({ ...prev, name: e.target.value }));
+                  }}
+                  onBlur={() => setTouched((prev) => ({ ...prev, itemName: true }))} // タッチ状態を更新
                   placeholder="アイテム名"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 text-black ${
+                    hasErrors.itemName
+                      ? "border-red-500 bg-red-50 focus:ring-red-500"
+                      : "border-gray-300 focus:ring-blue-500"
+                  }`}
                 />
-                {errors.newItem && <p className="text-red-500">{errors.newItem.message}</p>}
+                {hasErrors.itemName && (
+                  <p className="mt-1 text-sm text-red-600">アイテム名を入力してください</p>
+                )}
 
                 {/* 数量と単位 */}
-
                 <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    {...register("newItem.quantity", {
-                      // required: isEdit ? false : "数量は必須です",
-                      valueAsNumber: true,
-                      min: {
-                        value: 1,
-                        message: "1以上を入力してください",
-                      },
-                      onChange: (e) => {
+                  <div className="w-1/3">
+                    <input
+                      type="number"
+                      value={newItem.quantity || ""}
+                      onChange={(e) => {
                         setNewItem((prev) => ({ ...prev, quantity: e.target.value }));
-                      },
-                    })}
-                    min={1}
-                    max={100}
-                    step={1}
-                    placeholder="数量"
-                    className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
-                  />
-                  {errors.quantity && <p className="text-red-500">{errors.quantity.message}</p>}
+                      }}
+                      onBlur={() => setTouched((prev) => ({ ...prev, quantity: true }))} // タッチ状態を更新
+                      min={1}
+                      max={100}
+                      step={1}
+                      placeholder="数量"
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 text-black ${
+                        hasErrors.quantity
+                          ? "border-red-500 bg-red-50 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-blue-500"
+                      }`}
+                    />
+                    {hasErrors.quantity && (
+                      <p className="mt-1 text-sm text-red-600">1以上の数量を入力してください</p>
+                    )}
+                  </div>
+
                   <input
                     type="text"
-                    {...register("unit", {
-                      onChange: (e) => {
-                        setNewItem((prev) => ({ ...prev, unit: e.target.value }));
-                      },
-                    })}
-                    // onChange={handleNewItemChange}
+                    value={newItem.unit || ""}
+                    onChange={(e) => {
+                      setNewItem((prev) => ({ ...prev, unit: e.target.value }));
+                    }}
                     placeholder="単位（個、台など）"
                     className="w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                   />
@@ -400,20 +419,25 @@ export default function ChecklistForm({
                   onClick={() => {
                     handleAddItem();
 
-                    // resetだと全体の値がリセットされるので、restFieldを使用して各フィールドをリセットする
-                    // reset({newItem: { name: "", quantity: Number, unit: "" } });
-
-                    // newItem の各フィールドだけをリセット
+                    // フィールドのリセット
                     resetField("newItem.name");
                     resetField("newItem.quantity");
                     resetField("newItem.unit");
 
-                    // カテゴリー選択をリセットする
-                    resetField("selectedCategoryId");
+                    // カテゴリー選択をリセット
                     setSelectedCategoryId(null);
+
+                    // タッチ状態もリセット
+                    setTouched({
+                      category: false,
+                      itemName: false,
+                      quantity: false,
+                    });
                   }}
-                  className={`w-full py-2 rounded-lg flex items-center justify-center ${
-                    isAddDisabled ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-500"
+                  className={`w-full py-2 rounded-lg flex items-center justify-center transition-colors ${
+                    isAddDisabled
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
                   disabled={isAddDisabled}
                 >
