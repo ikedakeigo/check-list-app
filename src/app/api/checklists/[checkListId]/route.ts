@@ -1,4 +1,4 @@
-import { CheckListRequestBody } from "@/app/_types/checklists";
+import { UpdateChecklistRequest } from "@/app/_types/checklists";
 import { supabase } from "@/lib/supabase";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -59,13 +59,9 @@ export const GET = async (req: NextRequest, { params }: { params: { checkListId:
 
 // チェックリストの更新
 export const PATCH = async (req: NextRequest, { params }: { params: { checkListId: string } }) => {
-  // フロントエンドから送られてきたtokenより
-  // ログインされたユーザーか判断する
   const token = req.headers.get("Authorization") ?? "";
-  // supabaseに対してtokenを送る
   const { error, data } = await supabase.auth.getUser(token);
 
-  // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
   if (error) {
     return NextResponse.json({ status: error.message }, { status: 400 });
   }
@@ -76,26 +72,118 @@ export const PATCH = async (req: NextRequest, { params }: { params: { checkListI
 
   const supabaseUserId = data.user.id;
 
-  try {
-    const body: CheckListRequestBody = await req.json();
-    const { name, description, workDate, siteName, isTemplate, status } = body;
+  // Prisma User テーブルから実際のユーザーIDを取得
+  const user = await prisma.user.findUnique({
+    where: { supabaseUserId },
+    select: { id: true },
+  });
 
-    const checkList = await prisma.checkLists.update({
-      where: {
-        id: parseInt(params.checkListId),
-        user: { supabaseUserId },
-      },
-      data: {
-        name,
-        description,
-        workDate: workDate ? new Date(workDate) : undefined,
-        siteName,
-        isTemplate,
-        status,
-      },
+  if (!user) {
+    return NextResponse.json({ error: "ユーザーが見つかりません" }, { status: 404 });
+  }
+
+  const userId = user.id;
+
+  try {
+    const body: UpdateChecklistRequest = await req.json();
+
+    const updatedChecklist = await prisma.$transaction(async (tx) => {
+      // チェックリスト基本情報の更新
+      const checkList = await tx.checkLists.update({
+        where: {
+          id: Number(params.checkListId),
+          user: { supabaseUserId },
+        },
+        data: {
+          name: body.name,
+          description: body.description,
+          workDate: body.workDate ? new Date(body.workDate) : undefined,
+          siteName: body.siteName,
+          isTemplate: body.isTemplate,
+          status: body.status,
+        },
+      });
+
+      // アイテムの処理は items が明示的に送信された場合のみ実行
+      if (body.items !== undefined) {
+        console.log("アイテム更新処理開始");
+
+        const existingItemIds = (
+          await tx.checkListItem.findMany({
+            where: { checkListId: checkList.id },
+            select: { id: true },
+          })
+        ).map((item) => item.id);
+
+        const items = body.items;
+
+        if (!Array.isArray(items)) {
+          throw new Error("Items must be an array");
+        }
+
+        const incomingItemIds = items
+          .filter((item) => item.id !== undefined)
+          .map((item) => item.id);
+
+        // 削除対象（既存アイテムで、リクエストに含まれないもの）
+        const toDelete = existingItemIds.filter((id) => !incomingItemIds.includes(id));
+        if (toDelete.length > 0) {
+          console.log("削除対象アイテム:", toDelete);
+          await tx.checkListItem.deleteMany({
+            where: {
+              id: { in: toDelete },
+            },
+          });
+        }
+
+        // 新規追加または更新
+        for (const item of items) {
+          // バリデーション: 必須フィールドのチェック
+          if (!item.name || !item.name.trim()) {
+            throw new Error("アイテム名は必須です");
+          }
+
+          if (!item.categoryId) {
+            throw new Error("カテゴリーは必須です");
+          }
+
+          if (item.id) {
+            // 更新
+            console.log("アイテム更新:", item.id);
+            await tx.checkListItem.update({
+              where: { id: item.id },
+              data: {
+                name: item.name,
+                status: item.status,
+                quantity: item.quantity,
+                unit: item.unit,
+                categoryId: item.categoryId,
+                memo: item.memo,
+              },
+            });
+          } else {
+            // 新規追加
+            console.log("アイテム新規追加:", item.name);
+            await tx.checkListItem.create({
+              data: {
+                name: item.name,
+                status: item.status,
+                quantity: item.quantity,
+                unit: item.unit || "",
+                memo: item.memo || null,
+                checkListId: checkList.id,
+                categoryId: item.categoryId,
+                userId: userId,
+              },
+            });
+          }
+        }
+      }
+
+      return checkList;
     });
 
-    return NextResponse.json(checkList, { status: 200 });
+    return NextResponse.json(updatedChecklist, { status: 200 });
   } catch (error) {
     console.error("Error", error);
     return NextResponse.json({ error: "Error updating checklist" }, { status: 500 });

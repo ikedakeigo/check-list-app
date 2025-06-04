@@ -47,3 +47,19 @@ export type FormInputs = {
   category: string;
   selectedCategoryId: number | null;
 };
+
+
+export type FormattedItems = {
+  id: number;
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  categoryId: number;
+  // categoryName: string;
+  category?: {
+    id: number;
+    name: string;
+  } | null; // カテゴリーが存在しない場合もあるためオプショナル
+  status: string; // ChecklistStatusの型を使用することも可能
+  memo?: string; // オプショナルなプロパティ
+}

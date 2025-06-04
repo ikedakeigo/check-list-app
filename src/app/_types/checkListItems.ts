@@ -29,6 +29,8 @@ export type RecentCheckList = {
   createdAt: string;
   siteName: string;
   status: ChecklistStatus;
+  isTemplate: boolean;
+  archivedAt: string | null;
 }[];
 
 /**
@@ -43,12 +45,14 @@ export type UpdateCheckListItemStatus = {
 };
 
 export type NewItem = {
+  id?: number; // オプション: 新規追加時は未定義
   name: string;
   quantity: string;
   unit: string;
   categoryId: number | null;
   categoryName: string;
   status: ChecklistStatus;
+  memo?: string;
 };
 
 export type GroupedItemsType = {
@@ -97,7 +101,7 @@ export type CheckListItem = {
   description: string | null;
   unit: string;
   quantity: number;
-  status: "NotStarted" | "InProgress" | "Completed"; // 状態が決まっていればUnion型にする
+  status: "NotStarted" | "Pending" | "Completed"; // 状態が決まっていればUnion型にする
   completedAt: string | null;
   memo: string | null;
   createdAt: string;

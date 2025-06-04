@@ -31,7 +31,7 @@ const ChecklistDetailPage = () => {
           fetch(`/api/checklists/${id}`, {
             headers: {
               Authorization: token,
-            }
+            },
           }),
 
           // チェックリストのアイテムを取得
@@ -39,19 +39,16 @@ const ChecklistDetailPage = () => {
             headers: {
               Authorization: token,
             },
-          })
-        ])
+          }),
+        ]);
 
         if (!checklistRes.ok) throw new Error("チェックリストの取得に失敗しました");
         if (!itemsRes.ok) throw new Error("チェックリストのアイテムの取得に失敗しました");
 
         const [checklistData, itemsData] = await Promise.all([
           checklistRes.json(),
-          itemsRes.json()
-        ])
-
-        console.log("checklistData", checklistData);
-        console.log("itemsData", itemsData);
+          itemsRes.json(),
+        ]);
 
         setChecklist(checklistData);
         setItems(itemsData);
@@ -63,10 +60,9 @@ const ChecklistDetailPage = () => {
          */
 
         // Prismaが返す「categoryを含む」アイテムの型
-type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
-  include: { category: true };
-}>;
-
+        type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
+          include: { category: true };
+        }>;
 
         const grouped: Record<string, CheckListItem[]> = {};
         itemsData.forEach((item: CheckListItemWithCategory) => {
@@ -78,7 +74,6 @@ type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
           // カテゴリー名をキーにアイテムを追加
           grouped[categoryName].push(item);
         });
-
 
         setGroupedItems(grouped);
       } catch (error) {
@@ -142,7 +137,7 @@ type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
   };
 
   // アイテムのステータスを更新
-  const handleItemsStatusChange = async (itemId: number, newStatus: "Pending" | "Completed") => {
+  const handleItemsStatusChange = async (itemId: number, newStatus: "NotStarted" | "Completed") => {
     try {
       if (!token) return;
 
@@ -157,25 +152,33 @@ type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
 
       if (!res.ok) throw new Error("アイテムのステータスの更新に失敗しました");
 
-      // アイテムのステータスを更新
-      const updatedItem: CheckListItem = await res.json();
+      // 修正：APIレスポンス構造に合わせる
+      const responseData = await res.json();
+      const updatedItem: CheckListItem = responseData.item;
 
-      // ローカル状態の更新
-      updateItemStatusInState(updatedItem);
+      // ✅ items全体を更新
+      const updatedItems = items.map((item) => (item.id === itemId ? updatedItem : item));
 
-      const updatedItems = items.map((item) =>
-        // 対象のアイテムだけ（クリックしたアイテム）ステータスを更新し、それ以外はそのまま返す
-        item.id === itemId ? { ...item, status: newStatus } : item
-      );
+      setItems(updatedItems); // ← ✅ 明示的に更新！
+      updateItemStatusInState(updatedItem); // グループ化されたstateも更新
+
+      // チェックリスト情報も更新
+      if (responseData.checklist) {
+        setChecklist(responseData.checklist);
+      }
 
       await handleChecklistStatusUpdate(updatedItems, checklist, setChecklist, token, Number(id));
     } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("アイテムのステータスの更新に失敗しました");
-      }
+      setError(error instanceof Error ? error.message : "アイテムのステータスの更新に失敗しました");
     }
+  };
+
+  // チェックボックスのonChange イベントハンドラーも修正
+  const handleCheckboxChange = (itemId: number, isChecked: boolean) => {
+    // チェックされた場合は"Completed"、チェックが外された場合は"NotStarted"
+    const newStatus = isChecked ? "Completed" : "NotStarted";
+
+    handleItemsStatusChange(itemId, newStatus);
   };
 
   // チェックリストをアーカイブにする
@@ -213,7 +216,7 @@ type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
       if (!token) return;
 
       // 未完了のアイテムを取得
-      const pendingItems = items.filter((item) => item.status === "Pending");
+      const pendingItems = items.filter((item) => item.status === "NotStarted");
 
       const res = await fetch(`/api/checklists/${id}/items`, {
         method: "PATCH",
@@ -300,9 +303,14 @@ type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
           style: "bg-blue-100 text-blue-800",
           label: "進行中",
         };
+      case "NotStarted":
+        return {
+          style: "bg-yellow-100 text-yellow-800",
+          label: "未着手",
+        };
       default:
         return {
-          style: "bg-gray-100 text-gray-800",
+          style: "bg-yellow-100 text-yellow-800",
           label: "未着手",
         };
     }
@@ -394,9 +402,9 @@ type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
               <div>
                 <span className="text-gray-500">ステータス: </span>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                    checklist?.status
-                  ).style}`}
+                  className={`px-2 py-1 rounded-full text-xs ${
+                    getStatusColor(checklist?.status).style
+                  }`}
                 >
                   {getStatusColor(checklist?.status).label}
                 </span>
@@ -441,9 +449,9 @@ type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
                     <input
                       type="checkbox"
                       checked={item.status === "Completed"}
-                      onChange={(e) =>
-                        handleItemsStatusChange(item.id, e.target.checked ? "Completed" : "Pending")
-                      }
+                      onChange={(e) => {
+                        handleCheckboxChange(item.id, e.target.checked);
+                      }}
                       className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mt-1"
                     />
 
@@ -489,7 +497,7 @@ type CheckListItemWithCategory = Prisma.CheckListItemGetPayload<{
           ))}
 
           {/* 全て完了ボタン */}
-          {items.length > 0 && items.some((item) => item.status === "Pending") && (
+          {items.length > 0 && items.some((item) => item.status === "NotStarted") && (
             <div className="flex justify-center mb-6">
               <button
                 onClick={handleCompleteAllItems}
