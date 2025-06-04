@@ -50,9 +50,6 @@ const ChecklistDetailPage = () => {
           itemsRes.json(),
         ]);
 
-        console.log("checklistData", checklistData);
-        console.log("itemsData", itemsData);
-
         setChecklist(checklistData);
         setItems(itemsData);
 
@@ -140,7 +137,7 @@ const ChecklistDetailPage = () => {
   };
 
   // アイテムのステータスを更新
-  const handleItemsStatusChange = async (itemId: number, newStatus: "Pending" | "Completed") => {
+  const handleItemsStatusChange = async (itemId: number, newStatus: "NotStarted" | "Completed") => {
     try {
       if (!token) return;
 
@@ -155,25 +152,33 @@ const ChecklistDetailPage = () => {
 
       if (!res.ok) throw new Error("アイテムのステータスの更新に失敗しました");
 
-      // アイテムのステータスを更新
-      const updatedItem: CheckListItem = await res.json();
+      // 修正：APIレスポンス構造に合わせる
+      const responseData = await res.json();
+      const updatedItem: CheckListItem = responseData.item;
 
-      // ローカル状態の更新
-      updateItemStatusInState(updatedItem);
+      // ✅ items全体を更新
+      const updatedItems = items.map((item) => (item.id === itemId ? updatedItem : item));
 
-      const updatedItems = items.map((item) =>
-        // 対象のアイテムだけ（クリックしたアイテム）ステータスを更新し、それ以外はそのまま返す
-        item.id === itemId ? { ...item, status: newStatus } : item
-      );
+      setItems(updatedItems); // ← ✅ 明示的に更新！
+      updateItemStatusInState(updatedItem); // グループ化されたstateも更新
+
+      // チェックリスト情報も更新
+      if (responseData.checklist) {
+        setChecklist(responseData.checklist);
+      }
 
       await handleChecklistStatusUpdate(updatedItems, checklist, setChecklist, token, Number(id));
     } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("アイテムのステータスの更新に失敗しました");
-      }
+      setError(error instanceof Error ? error.message : "アイテムのステータスの更新に失敗しました");
     }
+  };
+
+  // チェックボックスのonChange イベントハンドラーも修正
+  const handleCheckboxChange = (itemId: number, isChecked: boolean) => {
+    // チェックされた場合は"Completed"、チェックが外された場合は"NotStarted"
+    const newStatus = isChecked ? "Completed" : "NotStarted";
+
+    handleItemsStatusChange(itemId, newStatus);
   };
 
   // チェックリストをアーカイブにする
@@ -211,7 +216,7 @@ const ChecklistDetailPage = () => {
       if (!token) return;
 
       // 未完了のアイテムを取得
-      const pendingItems = items.filter((item) => item.status === "Pending");
+      const pendingItems = items.filter((item) => item.status === "NotStarted");
 
       const res = await fetch(`/api/checklists/${id}/items`, {
         method: "PATCH",
@@ -298,9 +303,14 @@ const ChecklistDetailPage = () => {
           style: "bg-blue-100 text-blue-800",
           label: "進行中",
         };
+      case "NotStarted":
+        return {
+          style: "bg-yellow-100 text-yellow-800",
+          label: "未着手",
+        };
       default:
         return {
-          style: "bg-gray-100 text-gray-800",
+          style: "bg-yellow-100 text-yellow-800",
           label: "未着手",
         };
     }
@@ -439,9 +449,9 @@ const ChecklistDetailPage = () => {
                     <input
                       type="checkbox"
                       checked={item.status === "Completed"}
-                      onChange={(e) =>
-                        handleItemsStatusChange(item.id, e.target.checked ? "Completed" : "Pending")
-                      }
+                      onChange={(e) => {
+                        handleCheckboxChange(item.id, e.target.checked);
+                      }}
                       className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mt-1"
                     />
 
@@ -487,7 +497,7 @@ const ChecklistDetailPage = () => {
           ))}
 
           {/* 全て完了ボタン */}
-          {items.length > 0 && items.some((item) => item.status === "Pending") && (
+          {items.length > 0 && items.some((item) => item.status === "NotStarted") && (
             <div className="flex justify-center mb-6">
               <button
                 onClick={handleCompleteAllItems}
