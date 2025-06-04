@@ -3,9 +3,8 @@
 import useAuthCheck from "@/app/_hooks/useAuthCheck";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
 import { AddCategory } from "@/app/_types/category";
-import { ChecklistStatus, ItemsRes, NewItem } from "@/app/_types/checkListItems";
-import { ChecklistFormData } from "@/app/_types/checklists";
-import { FormInputs } from "@/app/_types/formProps";
+import { ChecklistStatus, NewItem } from "@/app/_types/checkListItems";
+import { FormattedItems, FormInputs } from "@/app/_types/formProps";
 import ChecklistForm from "@/components/form/ChecklistForm";
 import { useParams, useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
@@ -19,9 +18,6 @@ const NewChecklistPage = () => {
 
   const { token } = useSupabaseSession();
 
-  // todo 更新関数のみを使用している現状だったので、完全に不要なので削除
-  // const [, setUser] = useState<User | null>(null);
-
   const methods = useForm<FormInputs>({
     defaultValues: {
       name: "",
@@ -32,13 +28,6 @@ const NewChecklistPage = () => {
     },
   });
 
-  // const [formData, setFormData] = useState<ChecklistFormData>({
-  //   name: "",
-  //   description: "",
-  //   siteName: "",
-  //   workDate: new Date().toISOString().split("T")[0], // 今日の日付
-  //   isTemplate: false,
-  // });
 
   // カテゴリー関連の状態
   const [categories, setCategories] = useState<AddCategory>([]);
@@ -49,7 +38,7 @@ const NewChecklistPage = () => {
   // アイテムの初期値を関数で定義
   const initialNewItem: NewItem = {
     name: "",
-    quantity: "",
+    quantity: Number.isNaN(parseInt("0")) ? "" : "0", // 初期値は空文字列または"0"
     unit: "",
     categoryId: null,
     categoryName: "",
@@ -62,7 +51,7 @@ const NewChecklistPage = () => {
   // 新しいアイテムの入力状態
   const [newItem, setNewItem] = useState<NewItem>({
     name: "",
-    quantity: "",
+    quantity: Number.isNaN(parseInt("0")) ? "" : "0", // 初期値は空文字列または"0"
     unit: "",
     categoryId: null,
     categoryName: "",
@@ -73,76 +62,71 @@ const NewChecklistPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const [checklistStatus, setChecklistStatus] = useState<ChecklistStatus>();
+
   const fetchChecklist = useCallback(async () => {
-    if (!token) return;
-    // チェックリストの詳細を取得
+    if (!token || !useAuth) return;
+
     try {
-      const [checkListRes, itemsRes] = await Promise.all([
+      setLoading(true);
+
+      const [checklist, items, categories] = await Promise.all([
         fetch(`/api/checklists/${id}`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token,
-          },
+          headers: { Authorization: token },
+        }).then((res) => {
+          if (!res.ok) throw new Error("チェックリストの取得に失敗しました");
+          return res.json();
         }),
         fetch(`/api/checklists/${id}/items`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token,
-          },
+          headers: { Authorization: token },
+        }).then((res) => {
+          if (!res.ok) throw new Error("アイテムの取得に失敗しました");
+          return res.json();
+        }),
+        fetch(`/api/categories`, {
+          headers: { Authorization: token },
+        }).then((res) => {
+          if (!res.ok) throw new Error("カテゴリーの取得に失敗しました");
+          return res.json();
         }),
       ]);
 
-      if (!checkListRes.ok) throw new Error("チェックリストの取得に失敗しました");
-      if (!itemsRes.ok) throw new Error("アイテムの取得に失敗しました");
+      setChecklistStatus(checklist.status);
 
-      const [checkListData, itemsData]: [ChecklistFormData, ItemsRes] = await Promise.all([
-        checkListRes.json(),
-        itemsRes.json(),
-      ]);
+      // フォームの初期値を設定
+      methods.reset({
+        name: checklist.name,
+        description: checklist.description,
+        siteName: checklist.siteName,
+        workDate: new Date(checklist.workDate).toISOString().split("T")[0],
+        isTemplate: checklist.isTemplate,
+      });
 
-      // setFormData({
-      //   name: checkListData.name || "",
-      //   description: checkListData.description || "",
-      //   siteName: checkListData.siteName || "",
-      //   workDate: checkListData.workDate ? new Date(checkListData.workDate).toISOString().split("T")[0] : "",
-      //   isTemplate: checkListData.isTemplate || false,
-      // });
-
-      // アイテムをセット
-      const formattedItems = itemsData.map((item) => ({
+      // アイテムの初期値を設定
+      const formattedItems = items.map((item: FormattedItems) => ({
         id: item.id,
         name: item.name,
         quantity: item.quantity ? item.quantity.toString() : "",
         unit: item.unit || "",
         categoryId: item.categoryId,
-        categoryName: item.category.name,
+        categoryName: item.category?.name || "",
         status: item.status,
       }));
 
       setItems(formattedItems);
-      setSelectedCategoryId(formattedItems[0]?.categoryId || null); // 最初のアイテムのカテゴリーIDを選択
-
-      methods.reset({
-        name: checkListData.name,
-        description: checkListData.description,
-        siteName: checkListData.siteName,
-        workDate: new Date(checkListData.workDate).toISOString().split("T")[0],
-        isTemplate: checkListData.isTemplate,
-      });
-    } catch (error) {
-      console.error("エラーが発生しました", error);
-      setError("カテゴリーの取得に失敗しました");
+      setCategories(categories);
+      setSelectedCategoryId(formattedItems[0]?.categoryId || null);
+    } catch (err) {
+      console.error("初期データの取得に失敗しました", err);
+      setError("初期データの取得に失敗しました");
     } finally {
       setLoading(false);
     }
-  }, [token, id, methods]);
+  }, [token, useAuth, id, methods]);
 
   useEffect(() => {
-    // tokenがない場合は何もしない
-    if (!useAuth || !token) return;
     fetchChecklist();
-    setLoading(true);
-  }, [useAuth, token, fetchChecklist]);
+  }, [fetchChecklist]);
 
   // アイテムをリストに追加する関数
   const handleAddItem = () => {
@@ -186,13 +170,24 @@ const NewChecklistPage = () => {
     try {
       if (id) {
         // 編集の場合
-        await fetch(`/api/checklists/${id}/items`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token || "",
-          },
-        });
+        // チェックリスト本体の更新
+        const payload = {
+          name: data.name,
+          description: data.description,
+          workDate: data.workDate,
+          siteName: data.siteName,
+          isTemplate: data.isTemplate,
+          status: checklistStatus,
+          items: items.map((item) => ({
+            id: item.id, // ← 既存アイテムはidがある、新規はundefined
+            name: item.name,
+            status: item.status,
+            quantity: item.quantity ? Number(item.quantity) : null,
+            unit: item.unit,
+            categoryId: item.categoryId,
+            memo: item.memo,
+          })),
+        };
 
         const checklistResponse = await fetch(`/api/checklists/${id}`, {
           method: "PATCH",
@@ -200,13 +195,7 @@ const NewChecklistPage = () => {
             "Content-Type": "application/json",
             Authorization: token || "",
           },
-          body: JSON.stringify({
-            name: data.name,
-            description: data.description,
-            workDate: data.workDate,
-            siteName: data.siteName,
-            isTemplate: data.isTemplate,
-          }),
+          body: JSON.stringify(payload),
         });
 
         console.log("チェックリストの更新レスポンス", checklistResponse);
@@ -215,26 +204,6 @@ const NewChecklistPage = () => {
           const errorData = await checklistResponse.json();
           throw new Error(errorData.error || "チェックリストの更新に失敗しました");
         }
-
-        // アイテム追加処理
-        await Promise.all(
-          items.map(async (item) => {
-            await fetch(`/api/checklists/${id}/items`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: token || "",
-              },
-              body: JSON.stringify({
-                name: item.name,
-                quantity: item.quantity ? parseInt(item.quantity) : null,
-                unit: item.unit,
-                categoryId: item.categoryId,
-                status: item.status,
-              }),
-            });
-          })
-        );
 
         setSuccess("チェックリストを更新しました");
       } else {
