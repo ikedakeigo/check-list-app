@@ -10,10 +10,8 @@ import ArchiveIcon from "@/components/icons/ArchiveIcon";
 import PlusIcon from "@/components/icons/PlusIcon";
 import useAuthCheck from "./_hooks/useAuthCheck";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 const HomePage = () => {
-  const router = useRouter();
   const [user] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [todayChecklists, setTodayChecklists] = useState<TodaysCheckList>([]);
@@ -40,8 +38,6 @@ const HomePage = () => {
 
       if (userError || !userData) {
         console.error("ユーザーが見つかりません:", userError);
-        // ユーザーが見つからない場合はログインページにリダイレクトするなどの処理を追加
-        router.push("/login");
         return;
       }
 
