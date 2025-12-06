@@ -36,7 +36,6 @@ export default function ChecklistForm({
     formState: { errors },
     reset,
     resetField,
-    getValues,
   } = useFormContext<FormInputs>();
 
   // タッチ状態を管理
@@ -82,7 +81,6 @@ export default function ChecklistForm({
     fetchCategories();
   }, [token, reset, setCategories, setSelectedCategoryId]);
 
-  console.log("初期データ", getValues); // 値があるか確認
   const isAddDisabled =
     !newItem.name?.trim() ||
     !newItem.quantity ||
