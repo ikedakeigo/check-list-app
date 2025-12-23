@@ -22,26 +22,61 @@ const HomePage = () => {
 
   const authUser = useAuthCheck();
 
+  // Userレコードが無ければ作成し、userIdを返す
+  const ensureUser = async (supabaseUser: User) => {
+    const generatedId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : supabaseUser.id; // crypto未対応環境では supabaseUserId を利用
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("User")
+      .upsert(
+        {
+          id: generatedId,
+          supabaseUserId: supabaseUser.id,
+          name:
+            supabaseUser.user_metadata?.name ||
+            supabaseUser.user_metadata?.full_name ||
+            supabaseUser.email ||
+            "",
+          role: "user",
+          createdAt: now,
+          updatedAt: now,
+        },
+        { onConflict: "supabaseUserId" }
+      )
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data.id;
+  };
+
   // データ取得
-  const fetchData = async (supabaseUserId: string) => {
+  const fetchData = async (supabaseUser: User) => {
     try {
       setLoading(true);
 
-      console.log("Supabase認証ユーザーID:", supabaseUserId);
+      console.log("Supabase認証ユーザーID:", supabaseUser.id);
 
       // UserテーブルからユーザーのIDを取得
-      const { data: userData, error: userError } = await supabase
+      const { data: userData } = await supabase
         .from("User")
         .select("id")
-        .eq("supabaseUserId", supabaseUserId)
+        .eq("supabaseUserId", supabaseUser.id)
         .single();
 
-      if (userError || !userData) {
-        console.error("ユーザーが見つかりません:", userError);
+      const actualUserId =
+        userData?.id ||
+        (await ensureUser(supabaseUser).catch((err) => {
+          console.error("ユーザー作成に失敗しました:", err);
+          return null;
+        }));
+
+      if (!actualUserId) {
         return;
       }
-
-      const actualUserId = userData.id;
 
       // 今日の日付範囲を設定
       const today = new Date();
@@ -170,7 +205,7 @@ const HomePage = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        fetchData(user.id); // Supabaseの認証ユーザーIDを渡す
+        fetchData(user);
       }
     };
 
@@ -180,7 +215,7 @@ const HomePage = () => {
   // 認証済みユーザーが取得できたらデータを取得
   useEffect(() => {
     if (authUser) {
-      fetchData(authUser.id);
+      fetchData(authUser);
     }
   }, [authUser]);
 
