@@ -9,12 +9,50 @@ const AuthCallbackPage = () => {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      const { data } = await supabase.auth.getSession();
+      try {
+        const { data } = await supabase.auth.getSession();
+        const session = data?.session;
 
-      // ログイン成功時はホーム画面に遷移
-      if (data?.session) {
+        // Userテーブルにレコードが無ければ作成、あれば更新
+        const ensureUser = async (supabaseUserId: string, name?: string) => {
+          const generatedId = typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : supabaseUserId; // crypto未対応環境では supabaseUserId を利用
+          const now = new Date().toISOString();
+
+          const { data: userData, error } = await supabase
+            .from("User")
+            .upsert(
+              {
+                id: generatedId,
+                supabaseUserId,
+                name: name ?? "",
+                role: "user",
+                createdAt: now,
+                updatedAt: now,
+              },
+              { onConflict: "supabaseUserId" }
+            )
+            .select("id")
+            .single();
+          if (error) throw error;
+          return userData.id;
+        };
+
+        // セッションが無い場合はログインへ
+        if (!session?.user) {
+          router.push("/login");
+          return;
+        }
+
+        const user = session.user;
+        await ensureUser(
+          user.id,
+          user.user_metadata?.name || user.user_metadata?.full_name || user.email || ""
+        );
         router.push("/");
-      } else {
+      } catch (error) {
+        console.error("Auth callback error:", error);
         router.push("/login");
       }
     };
