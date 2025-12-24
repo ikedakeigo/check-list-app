@@ -1,18 +1,19 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { RecentCheckList, TodaysCheckList } from "./_types/checkListItems";
 import { NotificationRequestBody } from "./_types/notification";
 import Header from "@/components/header/page";
 import ArchiveIcon from "@/components/icons/ArchiveIcon";
 import PlusIcon from "@/components/icons/PlusIcon";
-import useAuthCheck from "./_hooks/useAuthCheck";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const HomePage = () => {
-  const [user] = useState<User | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState<boolean>(true);
   const [todayChecklists, setTodayChecklists] = useState<TodaysCheckList>([]);
   const [recentChecklists, setResentChecklists] = useState<RecentCheckList>([]);
@@ -20,63 +21,33 @@ const HomePage = () => {
   const [completedTaskCount, setCompletedTaskCount] = useState(0);
   const [totalTaskCount, setTotalTaskCount] = useState(0);
 
-  const authUser = useAuthCheck();
-
-  // Userレコードが無ければ作成し、userIdを返す
-  const ensureUser = async (supabaseUser: User) => {
-    const generatedId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : supabaseUser.id; // crypto未対応環境では supabaseUserId を利用
-    const now = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from("User")
-      .upsert(
-        {
-          id: generatedId,
-          supabaseUserId: supabaseUser.id,
-          name:
-            supabaseUser.user_metadata?.name ||
-            supabaseUser.user_metadata?.full_name ||
-            supabaseUser.email ||
-            "",
-          role: "user",
-          createdAt: now,
-          updatedAt: now,
-        },
-        { onConflict: "supabaseUserId" }
-      )
-      .select("id")
-      .single();
-    if (error) throw error;
-    return data.id;
-  };
+  // 未認証時はログインページにリダイレクト
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [authLoading, user, router]);
 
   // データ取得
-  const fetchData = async (supabaseUser: User) => {
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+
     try {
       setLoading(true);
-
-      console.log("Supabase認証ユーザーID:", supabaseUser.id);
 
       // UserテーブルからユーザーのIDを取得
       const { data: userData } = await supabase
         .from("User")
         .select("id")
-        .eq("supabaseUserId", supabaseUser.id)
+        .eq("supabaseUserId", user.id)
         .single();
 
-      const actualUserId =
-        userData?.id ||
-        (await ensureUser(supabaseUser).catch((err) => {
-          console.error("ユーザー作成に失敗しました:", err);
-          return null;
-        }));
-
-      if (!actualUserId) {
+      if (!userData?.id) {
+        console.error("ユーザーが見つかりませんでした");
         return;
       }
+
+      const actualUserId = userData.id;
 
       // 今日の日付範囲を設定
       const today = new Date();
@@ -196,28 +167,14 @@ const HomePage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  // useEffectも修正
+  // 認証が完了し、ユーザーが存在する場合にデータを取得
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        fetchData(user);
-      }
-    };
-
-    getCurrentUser();
-  }, []);
-
-  // 認証済みユーザーが取得できたらデータを取得
-  useEffect(() => {
-    if (authUser) {
-      fetchData(authUser);
+    if (!authLoading && user) {
+      fetchData();
     }
-  }, [authUser]);
+  }, [authLoading, user, fetchData]);
 
   const stats = [
     { label: "本日の現場", value: todayChecklists.length },

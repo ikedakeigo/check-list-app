@@ -9,22 +9,33 @@ const AuthCallbackPage = () => {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      let session = null;
       try {
         const { data } = await supabase.auth.getSession();
-        const session = data?.session;
+        session = data?.session;
+
+        if (!session?.user) {
+          router.push("/login");
+          return;
+        }
 
         // Userテーブルにレコードが無ければ作成、あれば更新
         const ensureUser = async (supabaseUserId: string, name?: string) => {
-          const generatedId = typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : supabaseUserId; // crypto未対応環境では supabaseUserId を利用
+          // 既存ユーザーを確認
+          const { data: existingUser } = await supabase
+            .from("User")
+            .select("id")
+            .eq("supabaseUserId", supabaseUserId)
+            .single();
+
+          const userId = existingUser?.id || crypto.randomUUID();
           const now = new Date().toISOString();
 
           const { data: userData, error } = await supabase
             .from("User")
             .upsert(
               {
-                id: generatedId,
+                id: userId,
                 supabaseUserId,
                 name: name ?? "",
                 role: "user",
@@ -35,25 +46,26 @@ const AuthCallbackPage = () => {
             )
             .select("id")
             .single();
+
           if (error) throw error;
           return userData.id;
         };
-
-        // セッションが無い場合はログインへ
-        if (!session?.user) {
-          router.push("/login");
-          return;
-        }
 
         const user = session.user;
         await ensureUser(
           user.id,
           user.user_metadata?.name || user.user_metadata?.full_name || user.email || ""
         );
+
         router.push("/");
       } catch (error) {
         console.error("Auth callback error:", error);
-        router.push("/login");
+        // セッションが有効な場合はホームへ（既存ユーザーの可能性）
+        if (session?.user) {
+          router.push("/");
+        } else {
+          router.push("/login");
+        }
       }
     };
 

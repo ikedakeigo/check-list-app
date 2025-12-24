@@ -34,12 +34,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // 初期ロード時にsessionを取得
     const getIntialSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          // refresh_tokenエラーなどの場合、セッションをクリア
+          console.error('Error fetching session', error.message);
+          await supabase.auth.signOut();
+          setUser(null);
+          return;
+        }
+
         setUser(session?.user ?? null);
       } catch (error) {
         if (error instanceof Error) {
           console.error('Error fetching session', error.message);
         }
+        // エラー時はセッションをクリア
+        await supabase.auth.signOut();
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -50,7 +62,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // 認証状態変更時のリスナーを登録
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null);
+        // サインアウトイベントまたはトークンリフレッシュ失敗時の処理
+        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          setUser(session?.user ?? null);
+        } else if (event === 'SIGNED_IN') {
+          setUser(session?.user ?? null);
+        } else {
+          setUser(session?.user ?? null);
+        }
         setLoading(false);
       }
     );
