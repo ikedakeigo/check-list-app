@@ -11,7 +11,7 @@ export type CheckListItemsRequestBody = {
   quantity?: number;
   unit?: string;
   memo?: string;
-  status: ChecklistStatus;
+  status?: ChecklistStatus; // Prisma のデフォルト値（NotStarted）を使用
 };
 
 export type TodaysCheckList = {

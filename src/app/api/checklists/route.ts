@@ -83,24 +83,43 @@ export const GET = async (req: NextRequest) => {
 // チェックリストの作成
 export const POST = async (req: NextRequest) => {
   const token = req.headers.get("Authorization") ?? "";
-  const { error } = await supabase.auth.getUser(token);
 
-  if (error) {
-    return NextResponse.json({ status: error.message }, { status: 400 });
+  // Supabase 認証チェック
+  const { data: authData, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !authData.user) {
+    return NextResponse.json(
+      { error: "認証が必要です" },
+      { status: 401 }
+    );
   }
+
+  const supabaseUser = authData.user;
+  const supabaseUserId = supabaseUser.id;
 
   try {
     const body: CheckListRequestBody = await req.json();
     const { name, description, workDate, siteName, isTemplate, status } = body;
 
-    const { data, error } = await supabase.auth.getUser(token);
+    // User を supabaseUserId で検索、なければ作成（upsert）
+    const user = await prisma.user.upsert({
+      where: { supabaseUserId },
+      update: {}, // 既存ユーザーは更新しない
+      create: {
+        supabaseUserId,
+        name: supabaseUser.user_metadata?.name || supabaseUser.email || "Unknown",
+        role: "user",
+      },
+    });
 
-    if (error || !data.user) {
-      throw new Error("ユーザーは登録されていません。");
+    if (!user) {
+      return NextResponse.json(
+        { error: "ユーザーが見つかりません" },
+        { status: 404 }
+      );
     }
 
-    const supabaseUserId = data.user.id;
-
+    // userId を明示的に指定してチェックリストを作成
     const checkList = await prisma.checkLists.create({
       data: {
         name,
@@ -108,16 +127,17 @@ export const POST = async (req: NextRequest) => {
         workDate: new Date(workDate),
         siteName,
         isTemplate: isTemplate || false,
-        user: {
-          connect: { supabaseUserId },
-        }, //supabaseUserId を持つUserを参照してuserIdを設定,
-        status // デフォルト値だが明示的に指定
+        status,
+        userId: user.id, // 明示的に userId を設定
       },
     });
 
-    return NextResponse.json(checkList, { status: 200 });
+    return NextResponse.json(checkList, { status: 201 });
   } catch (error) {
-    console.error("Error", error);
-    return NextResponse.json({ error: "Error creating checklist" }, { status: 500 });
+    console.error("Error creating checklist:", error);
+    return NextResponse.json(
+      { error: "チェックリストの作成に失敗しました" },
+      { status: 500 }
+    );
   }
 };
