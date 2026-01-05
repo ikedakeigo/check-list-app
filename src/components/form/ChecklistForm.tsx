@@ -5,7 +5,7 @@ import PlusIcon from "../icons/PlusIcon";
 
 import { useFormContext, FieldErrors } from "react-hook-form";
 import { FormInputs, formProps } from "@/app/_types/formProps";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 // タブの型定義
 type TabType = "basic" | "items";
@@ -36,7 +36,7 @@ export default function ChecklistForm({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     reset,
     resetField,
   } = useFormContext<FormInputs>();
@@ -51,12 +51,38 @@ export default function ChecklistForm({
   // タブ状態を管理（編集画面のみ使用）
   const [activeTab, setActiveTab] = useState<TabType>("basic");
 
+  // アイテムの初期状態を保存（変更検知用）
+  const initialItemsRef = useRef<string | null>(null);
+  if (initialItemsRef.current === null && items.length > 0) {
+    initialItemsRef.current = JSON.stringify(items);
+  }
+
+  // アイテムの変更を検知
+  // 編集時: 初期状態と比較して変更があるか
+  // 新規作成時: アイテムが1つ以上追加されたか
+  const isItemsChanged = isEdit
+    ? initialItemsRef.current !== null && initialItemsRef.current !== JSON.stringify(items)
+    : items.length > 0;
+
+  // フォームまたはアイテムに変更があるかどうか
+  const hasChanges = isDirty || isItemsChanged;
+
   // 基本情報タブにエラーがあるかどうかを判定（タブのインジケーター表示用）
-  const hasBasicTabErrors = !!(errors.name || errors.siteName || errors.workDate || errors.description);
+  const hasBasicTabErrors = !!(
+    errors.name ||
+    errors.siteName ||
+    errors.workDate ||
+    errors.description
+  );
 
   // バリデーションエラー時に該当タブへ切り替えるハンドラ（onErrorコールバックの引数を使用）
   const handleValidationError = (fieldErrors: FieldErrors<FormInputs>): void => {
-    const hasBasicErrors = !!(fieldErrors.name || fieldErrors.siteName || fieldErrors.workDate || fieldErrors.description);
+    const hasBasicErrors = !!(
+      fieldErrors.name ||
+      fieldErrors.siteName ||
+      fieldErrors.workDate ||
+      fieldErrors.description
+    );
     if (isEdit && hasBasicErrors && activeTab !== "basic") {
       setActiveTab("basic");
     }
@@ -127,8 +153,10 @@ export default function ChecklistForm({
             <div className="flex space-x-2">
               <button
                 onClick={handleSubmit(onSubmit, handleValidationError)}
-                disabled={loading}
-                className="px-4 py-2 bg-white bg-opacity-20 rounded-lg text-sm disabled:opacity-50"
+                disabled={loading || !hasChanges}
+                className={`px-4 py-2 rounded-lg text-sm disabled:opacity-50 ${
+                  hasChanges ? "bg-green-500 hover:bg-green-600" : "bg-white bg-opacity-20"
+                }`}
               >
                 {loading ? "保存中..." : "保存"}
               </button>
@@ -181,10 +209,11 @@ export default function ChecklistForm({
             <h1 className="text-xl font-bold">新規チェックリスト</h1>
           </div>
           <button
-            // onClick={handleSubmit}
             onClick={handleSubmit(onSubmit)}
-            disabled={loading}
-            className="px-4 py-2 bg-white bg-opacity-20 rounded-lg text-sm disabled:opacity-50"
+            disabled={loading || !hasChanges}
+            className={`px-4 py-2 rounded-lg text-sm disabled:opacity-50 ${
+              hasChanges ? "bg-green-500 hover:bg-green-600" : "bg-white bg-opacity-20"
+            }`}
           >
             {loading ? "保存中..." : "保存"}
           </button>
@@ -248,8 +277,11 @@ export default function ChecklistForm({
         ) : (
           <form onSubmit={handleSubmit(onSubmit, handleValidationError)} className="space-y-6">
             {/* 基本情報（新規作成時は常に表示、編集時はタブで切り替え） */}
-            {(!isEdit || activeTab === "basic") && (
-            <div className="bg-white p-4 rounded-lg shadow-sm">
+            <div
+              className={`bg-white p-4 rounded-lg shadow-sm ${
+                isEdit && activeTab !== "basic" ? "hidden" : ""
+              }`}
+            >
               <h2 className="text-lg font-bold mb-4 text-black">基本情報</h2>
 
               <div className="space-y-4">
@@ -367,11 +399,13 @@ export default function ChecklistForm({
                 </div>
               </div>
             </div>
-            )}
 
             {/* アイテム追加（新規作成時は常に表示、編集時はタブで切り替え） */}
-            {(!isEdit || activeTab === "items") && (
-            <div className="bg-white p-4 rounded-lg shadow-sm">
+            <div
+              className={`bg-white p-4 rounded-lg shadow-sm ${
+                isEdit && activeTab !== "items" ? "hidden" : ""
+              }`}
+            >
               <h2 className="text-lg font-bold mb-4 text-black">アイテム追加</h2>
 
               {/* カテゴリー選択 */}
@@ -531,7 +565,6 @@ export default function ChecklistForm({
                 )}
               </div>
             </div>
-            )}
           </form>
         )}
       </main>
