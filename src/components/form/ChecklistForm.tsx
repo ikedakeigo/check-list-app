@@ -3,9 +3,12 @@ import BackIcon from "../icons/BackIcon";
 import TrashIcon from "../icons/TrashIcon";
 import PlusIcon from "../icons/PlusIcon";
 
-import { useFormContext } from "react-hook-form";
+import { useFormContext, FieldErrors } from "react-hook-form";
 import { FormInputs, formProps } from "@/app/_types/formProps";
 import { useEffect, useState } from "react";
+
+// タブの型定義
+type TabType = "basic" | "items";
 
 export default function ChecklistForm({
   categories,
@@ -44,6 +47,20 @@ export default function ChecklistForm({
     itemName: false,
     quantity: false,
   });
+
+  // タブ状態を管理（編集画面のみ使用）
+  const [activeTab, setActiveTab] = useState<TabType>("basic");
+
+  // 基本情報タブにエラーがあるかどうかを判定（タブのインジケーター表示用）
+  const hasBasicTabErrors = !!(errors.name || errors.siteName || errors.workDate || errors.description);
+
+  // バリデーションエラー時に該当タブへ切り替えるハンドラ（onErrorコールバックの引数を使用）
+  const handleValidationError = (fieldErrors: FieldErrors<FormInputs>): void => {
+    const hasBasicErrors = !!(fieldErrors.name || fieldErrors.siteName || fieldErrors.workDate || fieldErrors.description);
+    if (isEdit && hasBasicErrors && activeTab !== "basic") {
+      setActiveTab("basic");
+    }
+  };
 
   // バリデーション状態を計算
   const hasErrors = {
@@ -109,7 +126,7 @@ export default function ChecklistForm({
             <h1 className="text-xl font-bold">チェックリスト編集</h1>
             <div className="flex space-x-2">
               <button
-                onClick={handleSubmit(onSubmit)}
+                onClick={handleSubmit(onSubmit, handleValidationError)}
                 disabled={loading}
                 className="px-4 py-2 bg-white bg-opacity-20 rounded-lg text-sm disabled:opacity-50"
               >
@@ -174,6 +191,41 @@ export default function ChecklistForm({
         </header>
       )}
 
+      {/* タブナビゲーション（編集画面のみ） */}
+      {isEdit && (
+        <div className="bg-white border-b border-gray-200">
+          <nav className="flex">
+            <button
+              type="button"
+              onClick={() => setActiveTab("basic")}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === "basic"
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <span className="flex items-center justify-center gap-1">
+                基本情報
+                {hasBasicTabErrors && (
+                  <span className="w-2 h-2 bg-red-500 rounded-full" aria-label="入力エラーあり" />
+                )}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("items")}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === "items"
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              アイテム
+            </button>
+          </nav>
+        </div>
+      )}
+
       <main className="p-4 pb-20">
         {/* エラーメッセージ */}
         {error && (
@@ -194,8 +246,9 @@ export default function ChecklistForm({
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* 基本情報 */}
+          <form onSubmit={handleSubmit(onSubmit, handleValidationError)} className="space-y-6">
+            {/* 基本情報（新規作成時は常に表示、編集時はタブで切り替え） */}
+            {(!isEdit || activeTab === "basic") && (
             <div className="bg-white p-4 rounded-lg shadow-sm">
               <h2 className="text-lg font-bold mb-4 text-black">基本情報</h2>
 
@@ -314,8 +367,10 @@ export default function ChecklistForm({
                 </div>
               </div>
             </div>
+            )}
 
-            {/* アイテム追加 */}
+            {/* アイテム追加（新規作成時は常に表示、編集時はタブで切り替え） */}
+            {(!isEdit || activeTab === "items") && (
             <div className="bg-white p-4 rounded-lg shadow-sm">
               <h2 className="text-lg font-bold mb-4 text-black">アイテム追加</h2>
 
@@ -476,6 +531,7 @@ export default function ChecklistForm({
                 )}
               </div>
             </div>
+            )}
           </form>
         )}
       </main>
