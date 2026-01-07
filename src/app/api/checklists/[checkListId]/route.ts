@@ -11,12 +11,14 @@ export const GET = async (req: NextRequest, { params }: { params: { checkListId:
   // ログインされたユーザーか判断する
   const token = req.headers.get("Authorization") ?? "";
   // supabaseに対してtokenを送る
-  const { error } = await supabase.auth.getUser(token);
+  const { error, data } = await supabase.auth.getUser(token);
 
   // 送ったtokenが正しくない場合、errorが返却されるのでクライアントにもエラーを返す
   if (error) {
     return NextResponse.json({ status: error.message }, { status: 400 });
   }
+
+  const supabaseUserId = data?.user?.id;
 
   try {
     /**
@@ -31,9 +33,15 @@ export const GET = async (req: NextRequest, { params }: { params: { checkListId:
       return NextResponse.json({ error: "Invalid checklist ID" }, { status: 400 });
     }
 
-    const checkList = await prisma.checkLists.findUnique({
+    // チェックリストを取得し、同時に lastViewedAt を更新
+    const checkList = await prisma.checkLists.update({
       where: {
         id,
+        // 自分のチェックリストのみ閲覧日時を更新
+        ...(supabaseUserId && { user: { supabaseUserId } }),
+      },
+      data: {
+        lastViewedAt: new Date(),
       },
       include: {
         items: {
@@ -53,7 +61,29 @@ export const GET = async (req: NextRequest, { params }: { params: { checkListId:
     return NextResponse.json(checkList, { status: 200 });
   } catch (error) {
     console.error("Error", error);
-    return NextResponse.json({ error: "Error fetching checklist" }, { status: 500 });
+    // updateでレコードが見つからない場合は findUnique にフォールバック
+    try {
+      const id = parseInt(params.checkListId);
+      const checkList = await prisma.checkLists.findUnique({
+        where: { id },
+        include: {
+          items: {
+            include: {
+              category: true,
+            },
+          },
+          user: true,
+        },
+      });
+
+      if (!checkList) {
+        return NextResponse.json({ error: "Checklist not found" }, { status: 404 });
+      }
+
+      return NextResponse.json(checkList, { status: 200 });
+    } catch {
+      return NextResponse.json({ error: "Error fetching checklist" }, { status: 500 });
+    }
   }
 };
 
