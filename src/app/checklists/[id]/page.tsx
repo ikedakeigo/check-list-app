@@ -442,9 +442,9 @@ const ChecklistDetailPage = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-3">{categoryName}</h3>
               <div className="space-y-3">
                 {categoryItems.map((item) => (
-                  <div
+                  <label
                     key={`${item.name}-${item.id}`}
-                    className="bg-white p-4 rounded-lg shadow-sm flex items-start"
+                    className="bg-white p-4 rounded-lg shadow-sm flex items-start cursor-pointer hover:bg-gray-50 transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -452,12 +452,12 @@ const ChecklistDetailPage = () => {
                       onChange={(e) => {
                         handleCheckboxChange(item.id, e.target.checked);
                       }}
-                      className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mt-1"
+                      className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mt-1 cursor-pointer"
                     />
 
                     <div className="ml-3 flex-1">
                       <div className="flex justify-between">
-                        <h4
+                        <span
                           className={`font-medium ${
                             item.status === "Completed"
                               ? "line-through text-gray-500"
@@ -465,10 +465,10 @@ const ChecklistDetailPage = () => {
                           }`}
                         >
                           {item.name}
-                        </h4>
-                        {item.quantity && item.unit && (
+                        </span>
+                        {(item.quantity !== null && item.quantity !== undefined) && (
                           <span className="text-sm text-gray-500">
-                            {item.quantity} {item.unit}
+                            {item.quantity}{item.unit ? ` ${item.unit}` : "個"}
                           </span>
                         )}
                       </div>
@@ -490,7 +490,7 @@ const ChecklistDetailPage = () => {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </label>
                 ))}
               </div>
             </div>
