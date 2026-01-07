@@ -18,6 +18,8 @@ const ChecklistDetailPage = () => {
   const [groupedItems, setGroupedItems] = useState<Grouped>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  // リクエスト中のアイテムIDを管理（複数アイテムを同時に処理可能）
+  const [updatingItemIds, setUpdatingItemIds] = useState<Set<number>>(new Set());
 
   // チェックリストとアイテムのデータを取得
   useEffect(() => {
@@ -138,8 +140,14 @@ const ChecklistDetailPage = () => {
 
   // アイテムのステータスを更新
   const handleItemsStatusChange = async (itemId: number, newStatus: "NotStarted" | "Completed") => {
+    // 既に更新中のアイテムは処理しない
+    if (updatingItemIds.has(itemId)) return;
+
     try {
       if (!token) return;
+
+      // 更新中のアイテムとしてマーク
+      setUpdatingItemIds((prev) => new Set(prev).add(itemId));
 
       const res = await fetch(`/api/checklists/${id}/items/${itemId}/status`, {
         method: "PATCH",
@@ -170,6 +178,13 @@ const ChecklistDetailPage = () => {
       await handleChecklistStatusUpdate(updatedItems, checklist, setChecklist, token, Number(id));
     } catch (error) {
       setError(error instanceof Error ? error.message : "アイテムのステータスの更新に失敗しました");
+    } finally {
+      // 更新完了したらマークを解除
+      setUpdatingItemIds((prev) => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
     }
   };
 
@@ -441,19 +456,35 @@ const ChecklistDetailPage = () => {
             <div key={categoryName} className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">{categoryName}</h3>
               <div className="space-y-3">
-                {categoryItems.map((item) => (
+                {categoryItems.map((item) => {
+                  const isUpdating = updatingItemIds.has(item.id);
+                  return (
                   <label
                     key={`${item.name}-${item.id}`}
-                    className="bg-white p-4 rounded-lg shadow-sm flex items-start cursor-pointer hover:bg-gray-50 transition-colors"
+                    className={`bg-white p-4 rounded-lg shadow-sm flex items-start transition-colors ${
+                      isUpdating
+                        ? "opacity-60 cursor-wait"
+                        : "cursor-pointer hover:bg-gray-50"
+                    }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={item.status === "Completed"}
-                      onChange={(e) => {
-                        handleCheckboxChange(item.id, e.target.checked);
-                      }}
-                      className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mt-1 cursor-pointer"
-                    />
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={item.status === "Completed"}
+                        disabled={isUpdating}
+                        onChange={(e) => {
+                          handleCheckboxChange(item.id, e.target.checked);
+                        }}
+                        className={`h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mt-1 ${
+                          isUpdating ? "cursor-wait" : "cursor-pointer"
+                        }`}
+                      />
+                      {isUpdating && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="ml-3 flex-1">
                       <div className="flex justify-between">
@@ -491,7 +522,8 @@ const ChecklistDetailPage = () => {
                       )}
                     </div>
                   </label>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
