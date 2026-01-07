@@ -186,6 +186,24 @@ const HomePage = () => {
                       <p className="text-sm text-gray-600 mb-2">
                         {checklist.siteName || "現場名なし"}
                       </p>
+                      {/* プログレスバーとアイテム数 */}
+                      <div className="flex items-center mb-2">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-green-500 h-2 rounded-full"
+                            style={{
+                              width: `${
+                                checklist.totalItems > 0
+                                  ? (checklist.completedItems / checklist.totalItems) * 100
+                                  : 0
+                              }%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="ml-4 text-sm text-gray-600">
+                          {checklist.completedItems}/{checklist.totalItems}
+                        </span>
+                      </div>
                       {/* ステータスバッジ */}
                       <div className="flex justify-between text-sm">
                         <span
