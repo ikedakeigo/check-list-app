@@ -31,6 +31,8 @@ export type RecentCheckList = {
   status: ChecklistStatus;
   isTemplate: boolean;
   archivedAt: string | null;
+  totalItems: number;
+  completedItems: number;
 }[];
 
 /**
