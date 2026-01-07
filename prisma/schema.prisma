@@ -43,6 +43,7 @@ model CheckLists {
   siteName      String
   isTemplate    Boolean         @default(false)
   archivedAt    DateTime?
+  lastViewedAt  DateTime?       // 最後に閲覧した日時
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   userId        String

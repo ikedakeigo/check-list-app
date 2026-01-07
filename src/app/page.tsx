@@ -1,6 +1,5 @@
 "use client";
 
-import { supabase } from "@/lib/supabase";
 import React, { useEffect, useState, useCallback } from "react";
 import { RecentCheckList, TodaysCheckList } from "./_types/checkListItems";
 import { NotificationRequestBody } from "./_types/notification";
@@ -10,13 +9,27 @@ import PlusIcon from "@/components/icons/PlusIcon";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSupabaseSession } from "./_hooks/useSupabaseSession";
+
+// ダッシュボードAPIのレスポンス型
+type DashboardResponse = {
+  todayChecklists: TodaysCheckList;
+  recentChecklists: RecentCheckList;
+  notifications: NotificationRequestBody[];
+  stats: {
+    todayCount: number;
+    totalTaskCount: number;
+    completedTaskCount: number;
+  };
+};
 
 const HomePage = () => {
   const { user, loading: authLoading } = useAuth();
+  const { token } = useSupabaseSession();
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(true);
   const [todayChecklists, setTodayChecklists] = useState<TodaysCheckList>([]);
-  const [recentChecklists, setResentChecklists] = useState<RecentCheckList>([]);
+  const [recentChecklists, setRecentChecklists] = useState<RecentCheckList>([]);
   const [notifications, setNotifications] = useState<NotificationRequestBody[]>([]);
   const [completedTaskCount, setCompletedTaskCount] = useState(0);
   const [totalTaskCount, setTotalTaskCount] = useState(0);
@@ -28,153 +41,45 @@ const HomePage = () => {
     }
   }, [authLoading, user, router]);
 
-  // データ取得
+  // データ取得（API経由）
   const fetchData = useCallback(async () => {
-    if (!user) return;
+    if (!user || !token) return;
 
     try {
       setLoading(true);
 
-      // UserテーブルからユーザーのIDを取得
-      const { data: userData } = await supabase
-        .from("User")
-        .select("id")
-        .eq("supabaseUserId", user.id)
-        .single();
+      const response = await fetch("/api/dashboard", {
+        headers: {
+          Authorization: token,
+        },
+      });
 
-      if (!userData?.id) {
-        console.error("ユーザーが見つかりませんでした");
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Dashboard API error:", errorData);
         return;
       }
 
-      const actualUserId = userData.id;
+      const data: DashboardResponse = await response.json();
 
-      // 今日の日付範囲を設定
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      // 今日のチェックリストを取得
-      const { data: todayData, error: todayError } = await supabase
-        .from("CheckLists")
-        .select("*")
-        .eq("userId", actualUserId)
-        .gte("workDate", today.toISOString())
-        .lt("workDate", tomorrow.toISOString())
-        .is("archivedAt", null)
-        .limit(5);
-
-      if (todayError) {
-        console.error("Error fetching today checklists:", todayError);
-        setTodayChecklists([]);
-        return;
-      }
-
-      // 各チェックリストの項目数を計
-      if (todayData && todayData.length > 0) {
-        const checklistsWithStats = await Promise.all(
-          todayData.map(async (checklist) => {
-            // 各チェックリストの項目を取得
-            const { data: items, error: itemsError } = await supabase
-              .from("CheckListItem")
-              .select("status")
-              .eq("checkListId", checklist.id);
-
-            if (itemsError) {
-              console.error("Error fetching items for checklist:", checklist.id, itemsError);
-              return {
-                ...checklist,
-                totalItems: 0,
-                completedItems: 0,
-              };
-            }
-
-            const totalItems = items?.length || 0;
-            const completedItems = items?.filter((item) => item.status === "Completed").length || 0;
-
-            return {
-              ...checklist,
-              totalItems,
-              completedItems,
-            };
-          })
-        );
-
-        setTodayChecklists(checklistsWithStats);
-
-        // 全体の統計を計算
-        let totalCompleted = 0;
-        let totalAll = 0;
-        checklistsWithStats.forEach((item) => {
-          totalCompleted += item.completedItems;
-          totalAll += item.totalItems;
-        });
-
-        setCompletedTaskCount(totalCompleted);
-        setTotalTaskCount(totalAll);
-      } else {
-        setTodayChecklists([]);
-        setCompletedTaskCount(0);
-        setTotalTaskCount(0);
-      }
-
-      // 最近のチェックリストを取得
-      const { data: recentData, error: recentError } = await supabase
-        .from("CheckLists")
-        .select("*")
-        .eq("userId", actualUserId)
-        .is("archivedAt", null)
-        .order("createdAt", { ascending: false })
-        .limit(5);
-
-      if (!recentError && recentData) {
-        // 最近のチェックリストにも項目数を追加
-        const recentWithStats = await Promise.all(
-          recentData.map(async (checklist) => {
-            const { data: items } = await supabase
-              .from("CheckListItem")
-              .select("status")
-              .eq("checkListId", checklist.id);
-
-            const totalItems = items?.length || 0;
-            const completedItems = items?.filter((item) => item.status === "Completed").length || 0;
-
-            return {
-              ...checklist,
-              totalItems,
-              completedItems,
-            };
-          })
-        );
-
-        setResentChecklists(recentWithStats);
-      }
-
-      // 通知を取得
-      const { data: notifData, error: notificationError } = await supabase
-        .from("Notification")
-        .select("*")
-        .eq("userId", actualUserId)
-        .order("createdAt", { ascending: false })
-        .limit(3);
-
-      if (!notificationError) {
-        setNotifications(notifData || []);
-      }
+      setTodayChecklists(data.todayChecklists);
+      setRecentChecklists(data.recentChecklists);
+      setNotifications(data.notifications);
+      setCompletedTaskCount(data.stats.completedTaskCount);
+      setTotalTaskCount(data.stats.totalTaskCount);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, token]);
 
-  // 認証が完了し、ユーザーが存在する場合にデータを取得
+  // 認証が完了し、ユーザーとトークンが存在する場合にデータを取得
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && token) {
       fetchData();
     }
-  }, [authLoading, user, fetchData]);
+  }, [authLoading, user, token, fetchData]);
 
   const stats = [
     { label: "本日の現場", value: todayChecklists.length },
@@ -281,9 +186,8 @@ const HomePage = () => {
                       <p className="text-sm text-gray-600 mb-2">
                         {checklist.siteName || "現場名なし"}
                       </p>
-                      {/* プログレスバーの代わりに */}
+                      {/* ステータスバッジ */}
                       <div className="flex justify-between text-sm">
-                        {/* <span className="text-blue-600">詳細を見る</span> */}
                         <span
                           className={`px-2 py-1 rounded-full text-xs ${
                             checklist.status === "Completed"
