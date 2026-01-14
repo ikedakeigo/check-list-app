@@ -85,7 +85,7 @@ const HomePage = () => {
     { label: "本日の現場", value: todayChecklists.length },
     {
       label: "完了タスク",
-      value: `${completedTaskCount}/${totalTaskCount || "?"}`,
+      value: totalTaskCount === 0 ? totalTaskCount : `${completedTaskCount}/${totalTaskCount}`,
     },
     {
       label: "未完了",
@@ -121,9 +121,9 @@ const HomePage = () => {
               ))}
             </div>
 
-            {/* 今日の現場 */}
+            {/* 本日の現場 */}
             <div>
-              <h2 className="text-lg font-bold mb-4 text-black">今日の現場</h2>
+              <h2 className="text-lg font-bold mb-4 text-black">本日の現場</h2>
               <div className="space-y-3">
                 {todayChecklists.length > 0 ? (
                   todayChecklists.map((checklist) => (
@@ -249,7 +249,7 @@ const HomePage = () => {
                   className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center space-x-2 text-blue-600"
                 >
                   <PlusIcon />
-                  <span>新規チェックリスト</span>
+                  <span>チェックリスト</span>
                 </Link>
                 <Link
                   href="/archive"
