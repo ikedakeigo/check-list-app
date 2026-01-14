@@ -205,11 +205,11 @@ const ChecklistsPage = () => {
    * label: UIに表示するラベル
    */
   const filterTabs = [
-    { id: "all", label: "すべて" },        // 全件表示（フィルターなし）
-    { id: "active", label: "進行中" },     // status = Pending
-    { id: "completed", label: "完了" },    // status = Completed
+    { id: "all", label: "すべて" }, // 全件表示（フィルターなし）
+    { id: "active", label: "進行中" }, // status = Pending
+    { id: "completed", label: "完了" }, // status = Completed
     { id: "templates", label: "テンプレート" }, // isTemplate = true
-    { id: "archived", label: "アーカイブ" },    // archivedAt != null
+    { id: "archived", label: "アーカイブ" }, // archivedAt != null
   ];
 
   // ========================================
@@ -277,12 +277,7 @@ const ChecklistsPage = () => {
           />
           {/* 検索アイコン */}
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -397,9 +392,7 @@ const ChecklistsPage = () => {
           </div>
         ) : error ? (
           /* エラー表示 */
-          <div className="bg-red-50 p-4 rounded-lg text-red-600 text-center">
-            {error}
-          </div>
+          <div className="bg-red-50 p-4 rounded-lg text-red-600 text-center">{error}</div>
         ) : checklists.length === 0 ? (
           /* 空状態表示 */
           <div className="bg-white p-8 rounded-lg shadow-sm text-center text-gray-500">
@@ -420,20 +413,15 @@ const ChecklistsPage = () => {
                 >
                   {/* ヘッダー: チェックリスト名 + ステータスバッジ */}
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium text-lg text-gray-900">
-                      {checklist.name}
-                    </h3>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${badge.className}`}
-                    >
+                    <h3 className="font-medium text-lg text-gray-900">{checklist.name}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs ${badge.className}`}>
                       {badge.label}
                     </span>
                   </div>
 
                   {/* 作業日 + 現場名 */}
                   <div className="text-sm text-gray-500 mb-3">
-                    {new Date(checklist.workDate).toLocaleDateString()} -{" "}
-                    {checklist.siteName}
+                    {new Date(checklist.workDate).toLocaleDateString()} - {checklist.siteName}
                   </div>
 
                   {/* 進捗バー */}
@@ -443,16 +431,15 @@ const ChecklistsPage = () => {
                         className="bg-green-500 h-2 rounded-full transition-all"
                         style={{
                           width: `${
-                            ((checklist.completedItems || 0) /
-                              (checklist.totalItems || 1)) *
-                            100
+                            ((checklist.completedItems || 0) / (checklist.totalItems || 1)) * 100
                           }%`,
                         }}
                       ></div>
                     </div>
                     {/* 完了数 / 総数 */}
                     <span className="ml-4 text-sm text-gray-600">
-                      {checklist.completedItems || 0}/{checklist.totalItems || "?"}
+                      {checklist.totalItems === 0 ? checklist.totalItems : checklist.completedItems}
+                      /{checklist.totalItems}
                     </span>
                   </div>
 
